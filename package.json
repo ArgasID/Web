@@ -1,0 +1,17 @@
+{
+  "name": "Web-Store",
+  "version": "2.0-BETA",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "keywords": [],
+  "author": "By Argas ID",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.9.0",
+    "express": "^5.1.0",
+    "mysql2": "^3.14.1"
+  }
+}

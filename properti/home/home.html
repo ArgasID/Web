@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta name="theme-color" content="#121a3a" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0f2e" media="(prefers-color-scheme: dark)">
+  <meta name="msapplication-navbutton-color" content="#121a3a">
+  <meta name="apple-mobile-web-app-status-bar-style" content="#121a3a">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Glowbit Network - Home</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="menu-toggle" id="menu-toggle">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <div class="logo">
+      <a href="home.html">Glowbit Network</a>
+    </div>
+    <div class="nav-menu" id="nav-menu">
+      <a href="home.html" class="active">Home</a>
+      <a href="rank.html">Beli Rank</a>
+      <a href="about.html">Tentang Kami</a>
+    </div>
+    <div class="profile" id="profile-dropdown">
+      <img
+        id="profile-pic"
+        src="https://mc-heads.net/avatar/steve/100"
+        alt="Profile"
+      />
+      <div class="dropdown" id="dropdown-menu">
+      <span class="display-name">Guest</span>
+        <hr>
+        <button id="logout-btn">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="container">
+    <!-- Hero Banner -->
+    <section class="hero-banner" data-scroll>
+      <img src="../asset/foto.png" alt="Glowbit Network Banner" class="banner-image">
+    </section>
+
+    <!-- Welcome Section -->
+    <section class="welcome-section">
+      <h1 data-scroll>Selamat Datang di Glowbit Network</h1>
+      <p data-scroll>Tingkatkan pengalaman bermain Minecraft Anda dengan rank eksklusif kami dan dapatkan berbagai keuntungan spesial!</p>
+      <a href="#Produk" class="btn btn-primary" data-scroll>
+        Beli Sekarang <i class="fas fa-arrow-right"></i>
+      </a>
+    </section>
+
+<!-- Server Info Cards -->
+<section class="server-info">
+  <h2 class="section-title" data-scroll>Info Server</h2>
+  <div class="info-cards">
+    <div class="info-card" data-scroll>
+      <div class="icon"><i class="fas fa-server"></i></div>
+      <h3>Status</h3>
+      <div class="value" id="server-status-text">Memuat...</div>
+      <div class="status" id="server-status-badge">
+        <span class="status-dot"></span>
+        <span class="status-text">Memeriksa...</span>
+      </div>
+    </div>
+    <div class="info-card" data-scroll>
+      <div class="icon"><i class="fas fa-users"></i></div>
+      <h3>Pemain</h3>
+      <div class="value" id="player-count-text">-/-</div>
+      <div class="status">
+        <span class="status-dot"></span>
+        <span class="status-text">Memuat...</span>
+      </div>
+    </div>
+    <div class="info-card" data-scroll>
+      <div class="icon"><i class="fab fa-discord"></i></div>
+      <h3>Discord</h3>
+      <div class="value" id="discord-count">120+</div>
+      <div class="status online">
+        <span class="status-dot"></span>
+        <span class="status-text">Members</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Server IP Section -->
+<section class="server-ips">
+  <h2 class="section-title" data-scroll>IP Server</h2>
+  <div class="ip-cards">
+    <div class="ip-card" data-scroll>
+      <i class="fab fa-java"></i>
+      <h3>Java Edition</h3>
+      <div class="ip-address">
+        <span>play.glowbit.net</span>
+        <button class="copy-btn" onclick="copyToClipboard(this, 'play.glowbit.net')">
+          <i class="far fa-copy"></i>
+          <span class="tooltip">Disalin!</span>
+        </button>
+      </div>
+    </div>
+    <div class="ip-card" data-scroll>
+      <i class="fas fa-mobile-alt"></i>
+      <h3>Bedrock Edition</h3>
+      <div class="ip-address">
+        <span>bedrock.glowbit.net</span>
+        <span class="port">Port: 19132</span>
+        <button class="copy-btn" onclick="copyToClipboard(this, 'bedrock.glowbit.net:19132')">
+          <i class="far fa-copy"></i>
+          <span class="tooltip">Disalin!</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Leaderboards Section -->
+<section class="leaderboards">
+  <h2 class="section-title" data-scroll>Leaderboards</h2>
+  <div class="leaderboard-cards">
+    <div class="leaderboard-card" data-scroll>
+      <h3><i class="fas fa-crown"></i> Top Donatur</h3>
+      <ol>
+        <li>
+          <span>Player1</span>
+          <span>Rp500.000</span>
+        </li>
+        <li>
+          <span>Player2</span>
+          <span>Rp350.000</span>
+        </li>
+        <li>
+          <span>Player3</span>
+          <span>Rp250.000</span>
+        </li>
+        <li>
+          <span>Player4</span>
+          <span>Rp200.000</span>
+        </li>
+        <li>
+          <span>Player5</span>
+          <span>Rp150.000</span>
+        </li>
+      </ol>
+    </div>
+    <div class="leaderboard-card" data-scroll>
+      <h3><i class="fas fa-thumbs-up"></i> Top Vote</h3>
+      <ol>
+        <li>
+          <span>PlayerA</span>
+          <span>120 votes</span>
+        </li>
+        <li>
+          <span>PlayerB</span>
+          <span>95 votes</span>
+        </li>
+        <li>
+          <span>PlayerC</span>
+          <span>80 votes</span>
+        </li>
+        <li>
+          <span>PlayerD</span>
+          <span>65 votes</span>
+        </li>
+        <li>
+          <span>PlayerE</span>
+          <span>50 votes</span>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+    <!-- Products Section -->
+    <section class="products" id="Produk">
+      <h2 class="section-title" data-scroll>Produk Kami</h2>
+      <div class="product-list">
+        <div class="product-card" data-scroll>
+          <img src="https://mc-heads.net/head/Steve/150" alt="Rank">
+          <h3>Rank</h3>
+          <p>Dapatkan akses eksklusif dengan membeli rank premium kami</p>
+          <a href="rank.html" class="btn btn-primary">Beli Sekarang</a>
+        </div>
+        <div class="product-card" data-scroll>
+          <img src="https://mc-heads.net/head/Steve/150" alt="Glowbits">
+          <h3>Glowbits</h3>
+          <p>Mata uang premium untuk membeli item khusus di server</p>
+          <a href="rank.html" class="btn btn-primary">Beli Sekarang</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-content">
+        <div class="footer-logo">Glowbit Network</div>
+        <p class="footer-description">Server Minecraft dengan pengalaman bermain terbaik dan komunitas yang ramah</p>
+        <div class="footer-links">
+          <a href="home.html">Home</a>
+          <a href="rank.html">Beli Rank</a>
+          <a href="about.html">Tentang Kami</a>
+          <a href="syarat-ketentuan.html">Terms of Service</a>
+        </div>
+        <div class="social-links">
+          <a href="https://discord.gg/glowbit" target="_blank"><i class="fab fa-discord"></i></a>
+          <a href="https://youtube.com" target="_blank"><i class="fab fa-youtube"></i></a>
+        </div>
+      </div>
+      <div class="copyright">
+        &copy; 2025 Glowbit Network. All Rights Reserved.
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta name="theme-color" content="#121a3a" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0f2e" media="(prefers-color-scheme: dark)">
+  <meta name="msapplication-navbutton-color" content="#121a3a">
+  <meta name="apple-mobile-web-app-status-bar-style" content="#121a3a">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Login Minecraft | Glowbit Network</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+  <link rel="stylesheet" href="login.css" />
+</head>
+<body>
+  <div class="page-wrapper">
+    <div class="login-container">
+      <div class="popup" id="login-popup" data-scroll>
+        <h2><i class="fas fa-sign-in-alt"></i> Login Minecraft</h2>
+        <p id="login-error" class="error"></p>
+        <input type="text" id="username-input" placeholder="Masukkan Username Minecraft" />
+        
+        <div class="platform-toggle-container">
+          <span>Bermain di?</span>
+          <div class="platform-toggle" id="platform-toggle">
+            <div class="platform-option active" data-value="java">Java</div>
+            <div class="platform-option" data-value="bedrock">HP</div>
+            <div class="platform-selector"></div>
+          </div>
+        </div>
+
+        <img id="skin-preview" src="" alt="Skin Preview" />
+        
+        <div class="terms-container">
+          <input type="checkbox" id="terms-checkbox">
+          <label for="terms-checkbox">Saya menyetujui <a href="syarat-ketentuan.html" class="terms-link">Syarat & Ketentuan</a></label>
+        </div>
+        
+        <button id="login-btn">
+          <i class="fas fa-unlock"></i> Masuk ke Minecraft
+        </button>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="copyright">
+          &copy; 2025 Glowbit Network. All Rights Reserved.
+        </div>
+        <div class="footer-links">
+          <a href="syarat-ketentuan.html">Terms of Service</a>
+          <span>|</span>
+          <a href="https://youtube.com" target="_blank">How to Buy Rank</a>
+          <span>|</span>
+          <a href="https://discord.gg/glowbit" target="_blank">Discord</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="login.js"></script>
+</body>
+</html>

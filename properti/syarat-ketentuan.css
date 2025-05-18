@@ -1,0 +1,211 @@
+/* ================ BASE VARIABLES ================ */
+:root {
+  --primary-blue: #2196F3;
+  --secondary-cyan: #00BCD4;
+  --dark-bg: #0a0f2e;
+  --card-bg: #121a3a;
+  --navbar-bg: #121858;
+  --text-color: #e0e0e0;
+  --text-light: #ffffff;
+  --text-dark: #b0b0b0;
+  --error-color: #FF5252;
+  --border-radius: 8px;
+  --transition: all 0.3s ease;
+}
+
+/* ================ BASE RESET & LAYOUT ================ */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: var(--dark-bg);
+  color: var(--text-color);
+  line-height: 1.6;
+  background-image: radial-gradient(circle at center, #121858 0%, #0a0f2e 100%);
+}
+
+/* ================ MAIN CONTENT ================ */
+.main-content {
+  flex: 1;
+  width: 100%;
+  padding: 20px;
+}
+
+/* ================ TERMS CONTENT STYLES ================ */
+.terms-container {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto 60px;
+  background: var(--card-bg);
+  border-radius: var(--border-radius);
+  padding: 40px;
+  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.terms-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.terms-header h1 {
+  color: var(--secondary-cyan);
+  font-size: 2.2rem;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.terms-header p {
+  color: var(--text-color);
+  opacity: 0.8;
+}
+
+.terms-content {
+  padding: 0 20px;
+}
+
+.terms-section {
+  margin-bottom: 30px;
+}
+
+.terms-section h2 {
+  color: var(--primary-blue);
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.terms-section h2 i {
+  font-size: 1.2rem;
+}
+
+.terms-section p, 
+.terms-section ul {
+  margin-bottom: 15px;
+  color: var(--text-light);
+}
+
+.terms-section ul {
+  padding-left: 20px;
+}
+
+.terms-section li {
+  margin-bottom: 8px;
+}
+
+.highlight {
+  color: var(--secondary-cyan);
+  font-weight: 500;
+}
+
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  background: var(--primary-blue);
+  color: white;
+  padding: 12px 25px;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  margin-top: 30px;
+  transition: var(--transition);
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.back-button:hover {
+  background: #1976D2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.back-button i {
+  margin-right: 8px;
+}
+
+/* ================ FOOTER FIXED FLUSH ================ */
+.footer {
+  background-color: var(--navbar-bg);
+  color: var(--text-color);
+  width: 100%;
+  text-align: center;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.footer-content {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 20px 0;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.footer-links a {
+  color: var(--secondary-cyan);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.footer-links a:hover {
+  color: var(--primary-blue);
+  text-decoration: underline;
+}
+
+.footer-links span {
+  color: var(--text-dark);
+  opacity: 0.5;
+}
+
+.copyright {
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  color: var(--text-dark);
+}
+
+/* ================ RESPONSIVE DESIGN ================ */
+@media (max-width: 768px) {
+  .terms-container { padding: 25px; }
+  .terms-header h1 { font-size: 1.8rem; }
+  .terms-section h2 { font-size: 1.3rem; }
+  .footer-content { padding: 15px 0; }
+  .footer-links { gap: 10px; }
+}
+
+@media (max-width: 480px) {
+  .main-content { padding: 15px; }
+  .terms-container { padding: 20px; }
+  .terms-header h1 { font-size: 1.6rem; }
+  .footer-links { gap: 8px; font-size: 0.8rem; }
+  .copyright,
+  .footer-links a { font-size: 0.8rem; }
+}
+

@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta name="theme-color" content="#121a3a" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0f2e" media="(prefers-color-scheme: dark)">
+  <meta name="msapplication-navbutton-color" content="#121a3a">
+  <meta name="apple-mobile-web-app-status-bar-style" content="#121a3a">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Glowbit Network - Tentang Kami</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="menu-toggle" id="menu-toggle">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <div class="logo">
+      <a href="home.html">Glowbit Network</a>
+    </div>
+    <div class="nav-menu" id="nav-menu">
+      <a href="home.html">Home</a>
+      <a href="rank.html">Beli Rank</a>
+      <a href="about.html" class="active">Tentang Kami</a>
+    </div>
+    <div class="profile" id="profile-dropdown">
+      <img
+        id="profile-pic"
+        src="https://mc-heads.net/avatar/steve/100"
+        alt="Profile"
+      />
+      <div class="dropdown" id="dropdown-menu">
+        <p id="profile-username">Guest</p>
+        <hr>
+        <button id="logout-btn">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="container">
+    <!-- About Section -->
+    <section class="about-section">
+      <h1 class="section-title" data-scroll>Tentang Glowbit Network</h1>
+      <p class="subtitle" data-scroll>Komunitas Minecraft terbaik dengan pengalaman bermain premium</p>
+
+      <div class="about-grid">
+        <!-- Server Info Card -->
+        <div class="about-card" data-scroll>
+          <i class="fas fa-server"></i>
+          <h3>Server Kami</h3>
+          <p>Glowbit Network menyediakan pengalaman bermain Minecraft yang unik dengan berbagai fitur eksklusif dan komunitas yang ramah.</p>
+          
+          <div class="server-ips" data-scroll>
+            <div class="ip-card">
+              <i class="fab fa-java"></i>
+              <h4>Java Edition</h4>
+              <div class="ip-address">
+                <span>play.glowbit.net</span>
+                <button class="copy-btn" onclick="copyToClipboard(this, 'play.glowbit.net')">
+                  <i class="far fa-copy"></i>
+                  <span class="tooltip">Disalin!</span>
+                </button>
+              </div>
+            </div>
+            
+            <div class="ip-card" data-scroll>
+              <i class="fas fa-mobile-alt"></i>
+              <h4>Bedrock Edition</h4>
+              <div class="ip-address">
+                <span>bedrock.glowbit.net</span>
+                <span class="port">Port: 19132</span>
+                <button class="copy-btn" onclick="copyToClipboard(this, 'bedrock.glowbit.net:19132')">
+                  <i class="far fa-copy"></i>
+                  <span class="tooltip">Disalin!</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Discord Community Card -->
+        <div class="about-card" data-scroll>
+          <i class="fab fa-discord"></i>
+          <h3>Komunitas Discord</h3>
+          <p>Bergabunglah dengan ribuan member kami di Discord untuk mendapatkan informasi terbaru, event khusus, dan berinteraksi dengan komunitas.</p>
+          <a href="https://discord.gg/glowbit" class="btn btn-primary" target="_blank">
+            <i class="fab fa-discord"></i> Join Discord
+          </a>
+        </div>
+
+        <!-- Customer Service Card -->
+        <div class="about-card" data-scroll>
+          <i class="fas fa-headset"></i>
+          <h3>Customer Service</h3>
+          <p>Tim support kami siap membantu Anda 24/7 melalui berbagai channel berikut:</p>
+          <ul class="contact-list">
+            <li>
+              <i class="fab fa-whatsapp"></i> WhatsApp: +62 812-3456-7890
+            </li>
+            <li>
+              <i class="fas fa-envelope"></i> Email: support@glowbit.net
+            </li>
+            <li>
+              <i class="fas fa-ticket-alt"></i> Ticket Support di Discord
+            </li>
+          </ul>
+        </div>
+
+        <!-- FAQ Card -->
+        <div class="about-card" data-scroll>
+          <i class="fas fa-question-circle"></i>
+          <h3>FAQ</h3>
+          
+          <div class="faq-item">
+            <h4>Bagaimana cara bergabung dengan server?</h4>
+            <p>Gunakan IP server yang tertera di atas sesuai dengan versi Minecraft Anda (Java/Bedrock).</p>
+          </div>
+          
+          <div class="faq-item">
+            <h4>Bagaimana cara membeli rank?</h4>
+            <p>Kunjungi halaman Beli Rank, pilih rank yang diinginkan, dan ikuti proses pembayaran.</p>
+          </div>
+          
+          <div class="faq-item">
+            <h4>Apa saja metode pembayaran yang tersedia?</h4>
+            <p>Kami menerima transfer bank, e-wallet (Dana, OVO, Gopay), dan QRIS.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Team Section -->
+    <section class="team-section">
+      <h2 class="section-title" data-scroll>Tim Kami</h2>
+      
+      <div class="team-grid">
+        <!-- Team Member 1 -->
+        <div class="team-member" data-scroll>
+          <img src="https://mc-heads.net/avatar/Argas/150" alt="Argas">
+          <h3>Argas</h3>
+          <p>Pemilik Server</p>
+        </div>
+        
+        <!-- Team Member 2 -->
+        <div class="team-member" data-scroll>
+          <img src="https://mc-heads.net/avatar/Developer/150" alt="Developer">
+          <h3>Alex</h3>
+          <p>Head Developer</p>
+        </div>
+        
+        <!-- Team Member 3 -->
+        <div class="team-member" data-scroll>
+          <img src="https://mc-heads.net/avatar/Admin/150" alt="Admin">
+          <h3>Sarah</h3>
+          <p>Head Admin</p>
+        </div>
+        
+        <!-- Team Member 4 -->
+        <div class="team-member" data-scroll>
+          <img src="https://mc-heads.net/avatar/Helper/150" alt="Helper">
+          <h3>Rio</h3>
+          <p>Head Helper</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-content">
+        <div class="footer-logo">Glowbit Network</div>
+        <p class="footer-description">Komunitas Minecraft premium dengan pengalaman bermain terbaik</p>
+        <div class="footer-links">
+          <a href="home.html">Home</a>
+          <a href="rank.html">Beli Rank</a>
+          <a href="about.html">Tentang Kami</a>
+          <a href="syarat-ketentuan.html">Terms of Service</a>
+        </div>
+        <div class="social-links">
+          <a href="https://discord.gg/glowbit" target="_blank"><i class="fab fa-discord"></i></a>
+          <a href="https://youtube.com" target="_blank"><i class="fab fa-youtube"></i></a>
+        </div>
+      </div>
+      <div class="copyright">
+        &copy; 2025 Glowbit Network. All Rights Reserved.
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

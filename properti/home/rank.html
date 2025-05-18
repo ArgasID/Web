@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta name="theme-color" content="#121a3a" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0f2e" media="(prefers-color-scheme: dark)">
+  <meta name="msapplication-navbutton-color" content="#121a3a">
+  <meta name="apple-mobile-web-app-status-bar-style" content="#121a3a">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Glowbit Network - Beli Rank</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="menu-toggle" id="menu-toggle">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <div class="logo">
+      <a href="home.html">Glowbit Network</a>
+    </div>
+    <div class="nav-menu" id="nav-menu">
+      <a href="home.html">Home</a>
+      <a href="rank.html" class="active">Beli Rank</a>
+      <a href="about.html">Tentang Kami</a>
+    </div>
+    <div class="profile" id="profile-dropdown">
+      <img
+        id="profile-pic"
+        src="https://mc-heads.net/avatar/steve/100"
+        alt="Profile"
+      />
+      <div class="dropdown" id="dropdown-menu">
+        <p id="profile-username">Guest</p>
+        <hr>
+        <button id="logout-btn">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="container">
+    <!-- Rank Section -->
+    <section class="rank-section">
+      <h1 class="section-title" data-scroll>Pilihan Rank</h1>
+      <p class="subtitle" data-scroll>Tingkatkan pengalaman bermain Anda dengan rank eksklusif</p>
+
+      <div class="rank-list">
+        <!-- VIP Rank -->
+        <div class="rank-card" data-rank="vip" data-scroll>
+          <div class="info-button" data-info="Prefix VIP, akses warp VIP, tag eksklusif di chat">
+            <i class="fas fa-info-circle"></i>
+          </div>
+          <img src="../asset/tes.png" alt="VIP Rank">
+          <h3>VIP</h3>
+          <p class="price">Rp10.000</p>
+          <button class="btn btn-primary buy-rank-btn">Beli Sekarang</button>
+        </div>
+
+        <!-- VIP+ Rank -->
+        <div class="rank-card" data-rank="vip+" data-scroll>
+          <div class="info-button" data-info="Semua fitur VIP, nickname custom, kit eksklusif harian">
+            <i class="fas fa-info-circle"></i>
+          </div>
+          <img src="../asset/tes.png" alt="VIP+ Rank">
+          <h3>VIP+</h3>
+          <p class="price">Rp25.000</p>
+          <button class="btn btn-primary buy-rank-btn">Beli Sekarang</button>
+        </div>
+
+        <!-- MVP Rank -->
+        <div class="rank-card" data-rank="mvp" data-scroll>
+          <div class="info-button" data-info="Semua fitur VIP+, fly di overworld, warp pribadi">
+            <i class="fas fa-info-circle"></i>
+          </div>
+          <img src="../asset/tes.png" alt="MVP Rank">
+          <h3>MVP</h3>
+          <p class="price">Rp50.000</p>
+          <button class="btn btn-primary buy-rank-btn">Beli Sekarang</button>
+        </div>
+
+        <!-- MVP+ Rank -->
+        <div class="rank-card" data-rank="mvp+" data-scroll>
+          <div class="info-button" data-info="Semua fitur MVP, warna chat custom, akses VIP lounge">
+            <i class="fas fa-info-circle"></i>
+          </div>
+          <img src="../asset/tes.png" alt="MVP+ Rank">
+          <h3>MVP+</h3>
+          <p class="price">Rp75.000</p>
+          <button class="btn btn-primary buy-rank-btn">Beli Sekarang</button>
+        </div>
+
+        <!-- Supreme Rank -->
+        <div class="rank-card" data-rank="supreme" data-scroll>
+          <div class="info-button" data-info="Semua fitur MVP+, particle effects, pet custom">
+            <i class="fas fa-info-circle"></i>
+          </div>
+          <img src="../asset/tes.png" alt="Supreme Rank">
+          <h3>Supreme</h3>
+          <p class="price">Rp100.000</p>
+          <button class="btn btn-primary buy-rank-btn">Beli Sekarang</button>
+        </div>
+
+        <!-- Ultimate Rank -->
+        <div class="rank-card" data-rank="ultimate" data-scroll>
+          <div class="info-button" data-info="Semua fitur Supreme, tag [ULTIMATE], akses semua fitur">
+            <i class="fas fa-info-circle"></i>
+          </div>
+          <img src="../asset/tes.png" alt="Ultimate Rank">
+          <h3>Ultimate</h3>
+          <p class="price">Rp150.000</p>
+          <button class="btn btn-primary buy-rank-btn">Beli Sekarang</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Feature Info Popup -->
+  <div class="popup" id="info-popup">
+    <div class="popup-content">
+      <span class="close-popup" id="close-info-popup">&times;</span>
+      <h3 id="info-rank-name">VIP</h3>
+      <div class="feature-list">
+        <h4>Fitur yang didapat:</h4>
+        <ul id="info-rank-features">
+          <!-- Features will be inserted here by JavaScript -->
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-content">
+        <div class="footer-logo">Glowbit Network</div>
+        <p class="footer-description">Tingkatkan pengalaman bermain Minecraft dengan rank eksklusif</p>
+        <div class="footer-links">
+          <a href="home.html">Home</a>
+          <a href="rank.html">Beli Rank</a>
+          <a href="about.html">Tentang Kami</a>
+          <a href="syarat-ketentuan.html">Terms of Service</a>
+        </div>
+        <div class="social-links">
+          <a href="https://discord.gg/glowbit" target="_blank"><i class="fab fa-discord"></i></a>
+          <a href="https://youtube.com" target="_blank"><i class="fab fa-youtube"></i></a>
+        </div>
+      </div>
+      <div class="copyright">
+        &copy; 2025 Glowbit Network. All Rights Reserved.
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
