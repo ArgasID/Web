@@ -94,3 +94,21 @@ app.listen(PORT, () => {
 process.on('uncaughtException', err => {
   console.error("Unhandled error:", err);
 });
+
+// Qr Sistem
+app.post('/create-qris', async (req, res) => {
+  const { username, amount } = req.body;
+  if (!username || !amount) return res.status(400).json({ success: false, message: 'Data tidak lengkap.' });
+
+  try {
+    const reference = 'REF' + Date.now();
+    const { qrBuffer } = await global.qrConfig.generateQR(amount);
+
+    // (Opsional: simpan `reference`, `username`, `amount` di DB untuk dilacak)
+
+    res.type('image/png').send(qrBuffer); // Atau kirim base64 jika perlu frontend tampilkan QR-nya
+  } catch (err) {
+    console.error('Gagal membuat QR:', err.message);
+    res.status(500).json({ success: false, message: 'Gagal membuat QRIS.' });
+  }
+});
