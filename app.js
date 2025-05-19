@@ -11,13 +11,11 @@ app.listen(PORT, () => {
 
 // Middleware
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'properti'))); // Serve semua file dari folder /login
-
-// Jalur utama: redirect ke halaman login
+// Serve semua file HTML dan aset dari root folder
+app.use(express.static(__dirname));
 app.get('/', (req, res) => {
-  res.redirect('/login.html');
+  res.redirect('/login/');
 });
-
 // Cek apakah username ada di database
 app.post('/check-username', async (req, res) => {
   const { username } = req.body;

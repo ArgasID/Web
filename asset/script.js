@@ -91,8 +91,8 @@ function initUserProfile() {
     const username = localStorage.getItem("username");
     
     // Redirect to login if not authenticated
-    if (!username && !window.location.pathname.includes("../login.html")) {
-      window.location.href = "../login.html";
+    if (!username && !window.location.pathname.includes("../login/index.html")) {
+      window.location.href = "../login/index.html";
       return;
     }
 
@@ -151,7 +151,7 @@ function initLogout() {
     logoutBtn.addEventListener("click", () => {
       localStorage.removeItem("username");
       localStorage.removeItem("avatar");
-      window.location.href = "../login.html";
+      window.location.href = "../login/index.html";
     });
   }
 }

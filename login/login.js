@@ -91,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (res.ok && data.exists) {
         localStorage.setItem("username", finalUsername);
         localStorage.setItem("platform", platform);
-        window.location.href = "/home/home.html";
+        window.location.href = "/dasboard/";
       } else {
         loginError.textContent = "Username tidak ditemukan.";
       }
