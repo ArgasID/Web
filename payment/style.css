@@ -1,33 +1,71 @@
-body {
-  font-family: Arial, sans-serif;
-  background: #f5f5f5;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
+.container {
+  max-width: 500px;
+  margin: 100px auto;
+  padding: 20px;
 }
 
-.container {
-  background: white;
-  padding: 20px 30px;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+.card {
+  background: var(--card-bg);
+  padding: 30px;
+  border-radius: var(--border-radius);
+  box-shadow: 0 0 15px rgba(0,0,0,0.3);
   text-align: center;
 }
 
-input {
+.card h2 {
+  color: var(--text-light);
+  margin-bottom: 10px;
+}
+
+.card h3 {
+  color: var(--primary-color);
   margin: 10px 0;
-  padding: 10px;
-  width: 100%;
-  font-size: 16px;
 }
 
-button {
-  padding: 10px 20px;
-  font-size: 16px;
+.btn {
+  background: var(--primary-color);
+  color: var(--text-light);
+  border: none;
+  padding: 12px 25px;
+  border-radius: var(--border-radius);
   cursor: pointer;
+  font-size: 1rem;
+  transition: var(--transition);
+  margin-top: 20px;
 }
 
-#qrPreview {
-  margin-top: 20px;
+.btn:hover {
+  background: var(--secondary-color);
+}
+
+label {
+  display: block;
+  margin: 20px 0 5px;
+  text-align: left;
+}
+
+select {
+  width: 100%;
+  padding: 10px;
+  border-radius: var(--border-radius);
+  border: none;
+  background: var(--dropdown-bg);
+  color: var(--text-light);
+  font-size: 1rem;
+}
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  margin-bottom: 15px;
+  background: var(--dropdown-bg);
+  color: var(--text-light);
+  border: none;
+  border-radius: var(--border-radius);
+}
+label {
+  display: block;
+  margin-top: 10px;
+  text-align: left;
 }

@@ -59,7 +59,7 @@
           <img src="/asset/tes.png" alt="VIP Rank">
           <h3>VIP</h3>
           <p class="price">Rp10.000</p>
-          <button class="btn btn-primary buy-rank-btn">Beli Sekarang</button>
+          <button class="btn btn-primary buy-rank-btn" onclick="belirank('VIP', 10000)">Beli Sekarang</button>
         </div>
 
         <!-- VIP+ Rank -->
@@ -158,5 +158,12 @@
   </footer>
 
   <script src="/asset/script.js"></script>
+  <script>
+    function belirank(rank, harga) {
+      localStorage.setItem('rank', rank);
+      localStorage.setItem('harga', harga);
+      window.location.href = '/payment/index.html'; 
+    }
+  </script>
 </body>
 </html>

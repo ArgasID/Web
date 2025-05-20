@@ -9,6 +9,12 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
+const axios = require('axios');
+
+const tripayApiKey = global.qrConfig.tripayApiKey;
+const tripayPrivateKey = global.qrConfig.tripayPrivateKey;
+const merchantCode = global.qrConfig.tripayMerchantCode;
+
 // Middleware
 app.use(express.json());
 // Serve semua file HTML dan aset dari root folder
@@ -111,4 +117,59 @@ app.post('/create-qris', async (req, res) => {
     console.error('Gagal membuat QR:', err.message);
     res.status(500).json({ success: false, message: 'Gagal membuat QRIS.' });
   }
+});
+
+const crypto = require('crypto');
+
+app.post('/api/bayar', async (req, res) => {
+  const { method, rank, harga, username } = req.body;
+
+  if (!method || !rank || !harga || !username) {
+    return res.status(400).json({ success: false, message: 'Data tidak lengkap' });
+  }
+
+  const merchantRef = 'ORDER-' + Date.now();
+  const signature = crypto.createHmac('sha256', tripayPrivateKey)
+    .update(merchantCode + merchantRef + harga)
+    .digest('hex');
+
+  const payload = {
+    method,
+    merchant_ref: merchantRef,
+    amount: harga,
+    customer_name: username,
+    order_items: [
+      {
+        sku: rank,
+        name: `Rank ${rank}`,
+        price: harga,
+        quantity: 1
+      }
+    ],
+    callback_url: 'https://web-production-6c47a.up.railway.app/api/callback',
+    return_url: 'https://web-production-6c47a.up.railway.app/payment/success.html',
+    signature
+  };
+
+  try {
+    const response = await axios.post('https://tripay.co.id/api-sandbox/transaction/create', payload, {
+      headers: {
+        Authorization: `Bearer ${tripayApiKey}`
+      }
+    });
+
+    res.json({ success: true, data: response.data.data });
+  } catch (err) {
+    console.error('Tripay Error:', err.response?.data || err.message);
+    res.status(500).json({ success: false, message: 'Gagal membuat transaksi Tripay' });
+  }
+});
+
+app.post('/api/callback', express.json(), (req, res) => {
+  const data = req.body;
+
+  console.log('Tripay Callback:', data);
+  // TODO: validasi signature & update database status pembayaran
+
+  res.status(200).send('OK');
 });

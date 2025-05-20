@@ -1,18 +1,96 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Test QRIS</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="theme-color" content="#121a3a" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0a0f2e" media="(prefers-color-scheme: dark)">
+  <meta name="msapplication-navbutton-color" content="#121a3a">
+  <meta name="apple-mobile-web-app-status-bar-style" content="#121a3a">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Halaman Pembayaran</title>
+  <link rel="stylesheet" href="/asset/style.css" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <h2>Test QRIS Payment</h2>
-    <input type="text" id="username" placeholder="Username Minecraft">
-    <input type="number" id="amount" placeholder="Jumlah (Rp)">
-    <button onclick="generateQR()">Generate QR</button>
-    <div id="qrPreview"></div>
-  </div>
-  <script src="script.js"></script>
+  <main class="container">
+    <section class="card">
+      <h2>Pembayaran</h2>
+
+      <p>Rank yang dipilih:</p>
+      <h3 id="rank-name">-</h3>
+      <p>Harga:</p>
+      <h3 id="rank-price">-</h3>
+
+      <label for="name">Nama Lengkap:</label>
+      <input type="text" id="name" required>
+
+      <label for="email">Email:</label>
+      <input type="email" id="email" required>
+
+      <label for="phone">Nomor HP (WA):</label>
+      <input type="tel" id="phone" required>
+
+      <label for="payment-method">Metode Pembayaran:</label>
+      <select id="payment-method" required>
+        <option value="">-- Pilih Metode --</option>
+        <option value="QRIS">QRIS</option>
+        <option value="BNIVA">BNI VA</option>
+        <option value="MANDIRIVA">Mandiri VA</option>
+        <option value="BRIVA">BRI VA</option>
+        <option value="OVO">OVO</option>
+        <option value="DANA">DANA</option>
+        <option value="SHOPEEPAY">ShopeePay</option>
+      </select>
+
+      <button class="btn" onclick="prosesPembayaran()">Bayar Sekarang</button>
+    </section>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const rank = localStorage.getItem("rank");
+      const harga = localStorage.getItem("harga");
+
+      if (rank && harga) {
+        document.getElementById("rank-name").textContent = rank;
+        document.getElementById("rank-price").textContent = `Rp${Number(harga).toLocaleString("id-ID")}`;
+      } else {
+        alert("Data pembelian tidak ditemukan.");
+        window.location.href = "/category/ranks/index.html";
+      }
+    });
+
+    async function prosesPembayaran() {
+      const rank = localStorage.getItem('rank');
+      const harga = localStorage.getItem('harga');
+
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const method = document.getElementById('payment-method').value;
+
+      if (!rank || !harga || !name || !email || !phone || !method) {
+        alert("Semua field harus diisi.");
+        return;
+      }
+
+      const res = await fetch('/api/bayar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ method, rank, harga, name, email, phone })
+      });
+
+      const data = await res.json();
+
+      if (data.success && data.data?.checkout_url) {
+        window.location.href = data.data.checkout_url;
+      } else {
+        alert('Gagal memproses pembayaran.');
+        console.error(data);
+      }
+    }
+  </script>
 </body>
 </html>
