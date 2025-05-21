@@ -1673,3 +1673,91 @@ a:hover {
     background: var(--dark-bg);
   }
 }
+
+/* Login Prompt Popup Styles */
+.login-prompt-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease;
+}
+
+.login-prompt-popup .popup-container {
+  background: #1a2035;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 400px;
+  overflow: hidden;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+  transform: translateY(20px);
+  transition: transform 0.3s ease;
+}
+
+.login-prompt-popup.show .popup-container {
+  transform: translateY(0);
+}
+
+.popup-header {
+  background: #2a3255;
+  padding: 1.5rem;
+  text-align: center;
+  color: #ff6b6b;
+}
+
+.popup-header i {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.popup-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.popup-body {
+  padding: 1.5rem;
+  text-align: center;
+  color: #d1d5db;
+}
+
+.popup-body p {
+  margin: 0.5rem 0;
+}
+
+.popup-footer {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #1e253a;
+}
+
+.btn-secondary {
+  background: #3a4255;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #4a5265;
+}
+
+.login-prompt-popup.closing {
+  animation: fadeOut 0.3s ease;
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

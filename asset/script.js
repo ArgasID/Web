@@ -19,8 +19,6 @@ document.addEventListener("DOMContentLoaded", function () {
   initServerStatus();
   initInfoButtons();
   initBuyRankButtons();
-  belirank();
-  checkPendingPurchase();
 });
 
 // ==================== MODULES ====================
@@ -376,51 +374,3 @@ function initInfoButtons() {
   });
 }
 
-// Beli Rank 
-function belirank(rank, harga) {
-  const username = localStorage.getItem("username");
-  
-  if (!username) {
-    // Tampilkan popup/pesan untuk login
-    const confirmLogin = confirm(
-      `Anda perlu login untuk membeli rank ${rank}.\n\nKlik "OK" untuk menuju halaman login.`
-    );
-    
-    if (confirmLogin) {
-      // Simpan rank yang ingin dibeli untuk redirect setelah login
-      localStorage.setItem('pending_rank', rank);
-      localStorage.setItem('pending_price', harga);
-      window.location.href = '/login/?redirect=/category/ranks/';
-    }
-    return;
-  }
-  
-  // Jika sudah login, lanjutkan pembelian
-  localStorage.setItem('rank', rank);
-  localStorage.setItem('harga', harga);
-  window.location.href = '/payment/'; 
-}
-
-//Pending Beli Rank 
-function checkPendingPurchase() {
-  // Cek setelah login apakah ada rank yang ingin dibeli
-  if (window.location.pathname.includes('/category/ranks/')) {
-    const pendingRank = localStorage.getItem('pending_rank');
-    const pendingPrice = localStorage.getItem('pending_price');
-    
-    if (pendingRank && pendingPrice) {
-      // Hapus data pending
-      localStorage.removeItem('pending_rank');
-      localStorage.removeItem('pending_price');
-      
-      // Tawarkan untuk melanjutkan pembelian
-      const continuePurchase = confirm(
-        `Lanjutkan pembelian rank ${pendingRank} seharga ${pendingPrice}?`
-      );
-      
-      if (continuePurchase) {
-        belirank(pendingRank, pendingPrice);
-      }
-    }
-  }
-}

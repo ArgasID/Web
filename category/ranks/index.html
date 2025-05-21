@@ -43,6 +43,24 @@
     </div>
   </nav>
 
+<!-- Beautiful Login Prompt Popup -->
+<div class="login-prompt-popup" id="login-prompt-popup">
+  <div class="popup-container">
+    <div class="popup-header">
+      <i class="fas fa-exclamation-circle"></i>
+      <h3>Login Diperlukan</h3>
+    </div>
+    <div class="popup-body">
+      <p>Anda Perlu Login Untuk Membeli Rank <span id="popup-rank-name"></span>.</p>
+      <p>Silakan Login Terlebih Dahulu Untuk Melanjutkan Pembelian.</p>
+    </div>
+    <div class="popup-footer">
+      <button class="btn btn-secondary" id="cancel-login-prompt">Nanti Saja</button>
+      <button class="btn btn-primary" id="confirm-login-prompt">Login Sekarang</button>
+    </div>
+  </div>
+</div>
+
   <!-- Main Content -->
   <main class="container">
     <!-- Rank Section -->
@@ -70,7 +88,7 @@
           <img src="/asset/foto/tes.png" alt="VIP+ Rank">
           <h3>VIP+</h3>
           <p class="price">Rp25.000</p>
-          <button class="btn btn-primary buy-rank-btn">Beli Sekarang</button>
+          <button class="btn btn-primary buy-rank-btn" onclick="belirank('VIP+', 25000)">Beli Sekarang</button>
         </div>
 
         <!-- MVP Rank -->
@@ -158,5 +176,6 @@
   </footer>
 
   <script src="/asset/script.js"></script>
+  <script src="rank.js"></script>
 </body>
 </html>
