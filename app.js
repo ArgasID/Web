@@ -4,23 +4,15 @@ const mysql = require('mysql2/promise');
 const path = require('path');
 const crypto = require('crypto');
 const axios = require('axios');
-
-// Configuration constants
-const PORT = process.env.PORT || 3000;
-const {
-  tripayApiKey,
-  tripayPrivateKey,
-  tripayMerchantCode: merchantCode
-} = global.qrConfig;
-
-// Initialize Express app
 const app = express();
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
 app.use(express.static(__dirname));
+app.get('/', (req, res) => res.redirect('/home/'));
 
-// Database helper functions
+// Function Config DataBase
 const db = {
   async query(sql, params) {
     const conn = await mysql.createConnection(global.dbConfig);
@@ -33,30 +25,7 @@ const db = {
   }
 };
 
-// Tripay helper functions
-const tripay = {
-  generateSignature(merchantRef, amount) {
-    return crypto.createHmac('sha256', tripayPrivateKey)
-      .update(merchantCode + merchantRef + amount)
-      .digest('hex');
-  },
-
-  async createTransaction(payload) {
-    const response = await axios.post(
-      'https://tripay.co.id/api-sandbox/transaction/create',
-      payload,
-      {
-        headers: { Authorization: `Bearer ${tripayApiKey}` }
-      }
-    );
-    return response.data.data;
-  }
-};
-
-// Routes
-app.get('/', (req, res) => res.redirect('/login/'));
-
-// User-related routes
+// Cek Username Di DataBase
 app.post('/check-username', async (req, res) => {
   try {
     const { username } = req.body;
@@ -70,6 +39,7 @@ app.post('/check-username', async (req, res) => {
   }
 });
 
+// Sistem Login
 app.post('/login', async (req, res) => {
   try {
     const { username } = req.body;
@@ -144,52 +114,6 @@ app.post('/buy', async (req, res) => {
   }
 });
 
-app.post('/callback', async (req, res) => {
-  try {
-    const { method, rank, harga, username } = req.body;
-    if (!method || !rank || !harga || !username) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Data tidak lengkap' 
-      });
-    }
-
-    const merchantRef = 'ORDER-' + Date.now();
-    const signature = tripay.generateSignature(merchantRef, harga);
-
-    const payload = {
-      method,
-      merchant_ref: merchantRef,
-      amount: harga,
-      customer_name: username,
-      order_items: [{
-        sku: rank,
-        name: `Rank ${rank}`,
-        price: harga,
-        quantity: 1
-      }],
-      callback_url: 'https://web-production-6c47a.up.railway.app/api/callback',
-      return_url: 'https://web-production-6c47a.up.railway.app/payment/success.html',
-      signature
-    };
-
-    const transactionData = await tripay.createTransaction(payload);
-    res.json({ success: true, data: transactionData });
-  } catch (err) {
-    console.error('Tripay Error:', err.response?.data || err.message);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Gagal membuat transaksi Tripay' 
-    });
-  }
-});
-
-app.post('/callback', express.json(), (req, res) => {
-  const data = req.body;
-  console.log('Tripay Callback:', data);
-  // TODO: validasi signature & update database status pembayaran
-  res.status(200).send('OK');
-});
 
 // Error handling
 process.on('uncaughtException', err => {

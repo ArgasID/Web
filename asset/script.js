@@ -18,6 +18,9 @@ document.addEventListener("DOMContentLoaded", function () {
   initNavbarScroll();
   initServerStatus();
   initInfoButtons();
+  initBuyRankButtons();
+  belirank();
+  checkPendingPurchase();
 });
 
 // ==================== MODULES ====================
@@ -83,63 +86,98 @@ function initScrollAnimations() {
  * User Profile Module - Handles user profile display and authentication
  */
 function initUserProfile() {
-  const displayNameElements = document.querySelectorAll(".display-name"); // Changed to class selector
+  const displayNameElements = document.querySelectorAll(".display-name, #profile-username");
   const profilePic = document.getElementById("profile-pic");
-  const profileUsername = document.getElementById("profile-username");
+  const logoutBtn = document.getElementById("logout-btn");
+  const profileDropdown = document.getElementById("profile-dropdown");
 
-  if ((displayNameElements.length || profileUsername) && profilePic) {
-    const username = localStorage.getItem("username");
-    
-    // Redirect to login if not authenticated
-    if (!username && !window.location.pathname.includes("../login/index.html")) {
-      window.location.href = "../login/index.html";
-      return;
-    }
+  // Cek status login
+  const username = localStorage.getItem("username");
+  const isAuthenticated = !!username;
 
-    // Display username in all elements with class 'display-name'
-    if (username && displayNameElements.length) {
+  // Update tampilan profil
+  if (profileDropdown) {
+    if (isAuthenticated) {
+      // Tampilkan data user yang login
       displayNameElements.forEach(el => {
-        el.textContent = username;
+        if (el) el.textContent = username;
       });
-    }
-    
-    // Set profile username in dropdown
-    if (profileUsername && username) {
-      profileUsername.textContent = username;
-    }
+      
+      if (logoutBtn) {
+        logoutBtn.style.display = "block";
+        // Hapus tombol login jika ada
+        const existingLoginBtn = document.getElementById('login-btn');
+        if (existingLoginBtn) existingLoginBtn.remove();
+      }
 
-    // Set profile picture with fallback
-    const setProfilePicture = () => {
-      const avatarUrl = username 
-        ? `https://mc-heads.net/avatar/${username}/100`
-        : "https://mc-heads.net/avatar/steve/100";
-
-      // Preload image to check if it exists
-      const testImage = new Image();
-      testImage.src = avatarUrl;
-
-      testImage.onload = () => {
-        profilePic.src = avatarUrl;
-        localStorage.setItem('avatar', avatarUrl);
-      };
-
-      testImage.onerror = () => {
-        profilePic.src = "https://mc-heads.net/avatar/steve/100";
-        localStorage.setItem('avatar', "https://mc-heads.net/avatar/steve/100");
-      };
-    };
-
-    // Set initial profile picture
-    const savedAvatar = localStorage.getItem('avatar');
-    if (savedAvatar) {
-      profilePic.src = savedAvatar;
-      profilePic.onerror = () => {
-        profilePic.src = "https://mc-heads.net/avatar/steve/100";
-      };
+      // Set avatar
+      if (profilePic) {
+        profilePic.src = `https://mc-heads.net/avatar/${username}/100`;
+        profilePic.onerror = () => {
+          profilePic.src = "https://mc-heads.net/avatar/steve/100";
+        };
+      }
     } else {
-      setProfilePicture();
+      // Tampilkan state guest
+      displayNameElements.forEach(el => {
+        if (el) el.textContent = "Guest";
+      });
+
+      if (profilePic) {
+        profilePic.src = "https://mc-heads.net/avatar/steve/100";
+      }
+
+      if (logoutBtn) {
+        logoutBtn.style.display = "none";
+      }
+
+      // Tambahkan tombol login jika belum ada
+      if (!document.getElementById('login-btn')) {
+        const loginBtn = document.createElement('button');
+        loginBtn.id = 'login-btn';
+        loginBtn.textContent = 'Login';
+        loginBtn.addEventListener('click', () => {
+          window.location.href = '/login/';
+        });
+
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        if (dropdownMenu) {
+          // Pastikan hr ada sebelum menambahkan tombol login
+          const hr = dropdownMenu.querySelector('hr');
+          if (!hr) {
+            dropdownMenu.insertAdjacentHTML('beforeend', '<hr>');
+          }
+          dropdownMenu.appendChild(loginBtn);
+        }
+      }
     }
   }
+}
+
+/**
+ * Update tombol beli rank untuk cek status login
+ */
+function initBuyRankButtons() {
+  const buyButtons = document.querySelectorAll('.buy-rank-btn');
+  
+  buyButtons.forEach(button => {
+    button.addEventListener('click', function(e) {
+      const isAuthenticated = !!localStorage.getItem("username");
+      
+      if (!isAuthenticated) {
+        e.preventDefault();
+        showNotification('Silakan login terlebih dahulu untuk membeli rank', false);
+        setTimeout(() => {
+          window.location.href = '/login/';
+        }, 2000);
+      } else {
+        // Lanjutkan proses pembelian
+        const rank = this.closest('.rank-card').getAttribute('data-rank');
+        const price = this.closest('.rank-card').querySelector('.price').textContent;
+        belirank(rank, price);
+      }
+    });
+  });
 }
 
 /**
@@ -151,7 +189,7 @@ function initLogout() {
     logoutBtn.addEventListener("click", () => {
       localStorage.removeItem("username");
       localStorage.removeItem("avatar");
-      window.location.href = "../login/index.html";
+      window.location.href = "/login/";
     });
   }
 }
@@ -336,4 +374,53 @@ function initInfoButtons() {
       infoPopup.classList.remove('show');
     }
   });
+}
+
+// Beli Rank 
+function belirank(rank, harga) {
+  const username = localStorage.getItem("username");
+  
+  if (!username) {
+    // Tampilkan popup/pesan untuk login
+    const confirmLogin = confirm(
+      `Anda perlu login untuk membeli rank ${rank}.\n\nKlik "OK" untuk menuju halaman login.`
+    );
+    
+    if (confirmLogin) {
+      // Simpan rank yang ingin dibeli untuk redirect setelah login
+      localStorage.setItem('pending_rank', rank);
+      localStorage.setItem('pending_price', harga);
+      window.location.href = '/login/?redirect=/category/ranks/';
+    }
+    return;
+  }
+  
+  // Jika sudah login, lanjutkan pembelian
+  localStorage.setItem('rank', rank);
+  localStorage.setItem('harga', harga);
+  window.location.href = '/payment/'; 
+}
+
+//Pending Beli Rank 
+function checkPendingPurchase() {
+  // Cek setelah login apakah ada rank yang ingin dibeli
+  if (window.location.pathname.includes('/category/ranks/')) {
+    const pendingRank = localStorage.getItem('pending_rank');
+    const pendingPrice = localStorage.getItem('pending_price');
+    
+    if (pendingRank && pendingPrice) {
+      // Hapus data pending
+      localStorage.removeItem('pending_rank');
+      localStorage.removeItem('pending_price');
+      
+      // Tawarkan untuk melanjutkan pembelian
+      const continuePurchase = confirm(
+        `Lanjutkan pembelian rank ${pendingRank} seharga ${pendingPrice}?`
+      );
+      
+      if (continuePurchase) {
+        belirank(pendingRank, pendingPrice);
+      }
+    }
+  }
 }
