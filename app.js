@@ -123,6 +123,7 @@ const tripayConfig = require('./config/tripay');
 // Create Payment
 app.post('/api/bayar-rank', async (req, res) => {
   const transactionId = `TRX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const fs = require('fs');
   
   try {
     console.log(`[${transactionId}] Payment request received`);
@@ -188,13 +189,21 @@ app.post('/api/bayar-rank', async (req, res) => {
     if (result.success) {
       console.log(`[${transactionId}] Payment created successfully`);
       
-      // Save to database
-      await db.query(
-        `INSERT INTO transactions 
-        (transaction_id, merchant_ref, customer_name, email, phone, amount, status, payment_method)
-        VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?)`,
-        [transactionId, merchant_ref, name, email, phone, harga, paymentMethod]
-      );
+      // Log transaction to file instead of database
+      const logEntry = {
+        timestamp: new Date().toISOString(),
+        transaction_id: transactionId,
+        merchant_ref,
+        customer_name: name,
+        email,
+        phone,
+        amount: harga,
+        status: 'PENDING',
+        payment_method: paymentMethod,
+        checkout_url: result.data.checkout_url
+      };
+      
+      fs.appendFileSync('transactions.log', JSON.stringify(logEntry) + '\n');
 
       return res.json({
         success: true,
