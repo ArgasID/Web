@@ -108,6 +108,6 @@ async function prosesPembayaran(rank, harga) {
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Terjadi kesalahan saat memproses pembayaran');
+        alert('Terjadi kesalahan saat memproses pembayaran', error);
     }
 }
