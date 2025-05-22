@@ -229,114 +229,101 @@ app.post('/api/bayar-rank', async (req, res) => {
 });
 
 // Tripay Callback Handler
-// app.post('/callback', async (req, res) => {
-//   const callbackId = `CB-${Date.now()}`;
+app.post('/callback', async (req, res) => {
+  const callbackId = `CB-${Date.now()}`;
   
-//   try {
-//     // 1. Validasi headers dan signature
-//     const callbackSignature = req.headers['x-callback-signature'];
-//     const callbackEvent = req.headers['x-callback-event'];
-//     const jsonData = req.body;
+  try {
+    // 1. Validasi headers dan signature
+    const callbackSignature = req.headers['x-callback-signature'];
+    const callbackEvent = req.headers['x-callback-event'];
+    const jsonData = req.body;
 
-//     if (!callbackSignature || !callbackEvent) {
-//       console.error(`[${callbackId}] Missing required headers`);
-//       return res.status(400).send('Bad Request');
-//     }
+    if (!callbackSignature || !callbackEvent) {
+      console.error(`[${callbackId}] Missing required headers`);
+      return res.status(400).send('Bad Request');
+    }
 
-//     // 2. Generate signature
-//     const generatedSignature = crypto
-//       .createHmac('sha256', tripayConfig.privateKey)
-//       .update(JSON.stringify(jsonData))
-//       .digest('hex');
+    // 2. Generate signature
+    const generatedSignature = crypto
+      .createHmac('sha256', tripayConfig.privateKey)
+      .update(JSON.stringify(jsonData))
+      .digest('hex');
 
-//     // 3. Verifikasi signature
-//     if (generatedSignature !== callbackSignature) {
-//       console.error(`[${callbackId}] Signature mismatch`, {
-//         received: callbackSignature,
-//         expected: generatedSignature
-//       });
-//       return res.status(403).send('Forbidden');
-//     }
+    // 3. Verifikasi signature
+    if (generatedSignature !== callbackSignature) {
+      console.error(`[${callbackId}] Signature mismatch`, {
+        received: callbackSignature,
+        expected: generatedSignature
+      });
+      return res.status(403).send('Forbidden');
+    }
 
-//     // 4. Validasi event type
-//     if (callbackEvent !== 'payment_status') {
-//       console.error(`[${callbackId}] Invalid event type: ${callbackEvent}`);
-//       return res.status(400).send('Invalid Event Type');
-//     }
+    // 4. Validasi event type
+    if (callbackEvent !== 'payment_status') {
+      console.error(`[${callbackId}] Invalid event type: ${callbackEvent}`);
+      return res.status(400).send('Invalid Event Type');
+    }
 
-//     // 5. Validasi data transaksi
-//     const { reference, status, merchant_ref, amount } = jsonData;
-//     if (!reference || !status || !merchant_ref || !amount) {
-//       console.error(`[${callbackId}] Missing transaction data`);
-//       return res.status(400).send('Incomplete Transaction Data');
-//     }
+    // 5. Validasi data transaksi
+    const { reference, status, merchant_ref, amount } = jsonData;
+    if (!reference || !status || !merchant_ref || !amount) {
+      console.error(`[${callbackId}] Missing transaction data`);
+      return res.status(400).send('Incomplete Transaction Data');
+    }
 
-//     // 6. Proses status pembayaran
-//     console.log(`[${callbackId}] Processing payment status:`, { reference, status });
+    // 6. Proses status pembayaran
+    console.log(`[${callbackId}] Processing payment status:`, { reference, status });
 
-//     const fs = require('fs');
-//     const logData = {
-//       timestamp: new Date().toISOString(),
-//       callback_id: callbackId,
-//       reference,
-//       status,
-//       merchant_ref,
-//       amount,
-//       event: callbackEvent
-//     };
+    const fs = require('fs');
+    const logData = {
+      timestamp: new Date().toISOString(),
+      callback_id: callbackId,
+      reference,
+      status,
+      merchant_ref,
+      amount,
+      event: callbackEvent
+    };
 
-//     // 7. Simpan log berdasarkan status
-//     switch (status) {
-//       case 'PAID':
-//         fs.appendFileSync('paid_payments.log', JSON.stringify(logData) + '\n');
-//         console.log(`[${callbackId}] Payment SUCCESS: ${reference}`);
-//         break;
+    // 7. Simpan log berdasarkan status
+    switch (status) {
+      case 'PAID':
+        fs.appendFileSync('paid_payments.log', JSON.stringify(logData) + '\n');
+        console.log(`[${callbackId}] Payment SUCCESS: ${reference}`);
+        break;
 
-//       case 'FAILED':
-//         fs.appendFileSync('failed_payments.log', JSON.stringify(logData) + '\n');
-//         console.warn(`[${callbackId}] Payment FAILED: ${reference}`);
-//         break;
+      case 'FAILED':
+        fs.appendFileSync('failed_payments.log', JSON.stringify(logData) + '\n');
+        console.warn(`[${callbackId}] Payment FAILED: ${reference}`);
+        break;
 
-//       case 'EXPIRED':
-//         fs.appendFileSync('expired_payments.log', JSON.stringify(logData) + '\n');
-//         console.warn(`[${callbackId}] Payment EXPIRED: ${reference}`);
-//         break;
+      case 'EXPIRED':
+        fs.appendFileSync('expired_payments.log', JSON.stringify(logData) + '\n');
+        console.warn(`[${callbackId}] Payment EXPIRED: ${reference}`);
+        break;
 
-//       default:
-//         fs.appendFileSync('unknown_payments.log', JSON.stringify(logData) + '\n');
-//         console.error(`[${callbackId}] Unknown status: ${status}`);
-//     }
+      default:
+        fs.appendFileSync('unknown_payments.log', JSON.stringify(logData) + '\n');
+        console.error(`[${callbackId}] Unknown status: ${status}`);
+    }
 
-//     // 8. Beri response ke Tripay
-//     res.status(200).json({
-//       success: true,
-//       callback_id: callbackId,
-//       message: 'Callback processed'
-//     });
+    // 8. Beri response ke Tripay
+    res.status(200).json({
+      success: true,
+      callback_id: callbackId,
+      message: 'Callback processed'
+    });
 
-//   } catch (error) {
-//     console.error(`[${callbackId}] Processing error:`, error.stack);
+  } catch (error) {
+    console.error(`[${callbackId}] Processing error:`, error.stack);
     
-//     // Tetap return 200 untuk mencegah retry berulang dari Tripay
-//     res.status(200).json({
-//       success: false,
-//       error: 'Processing error but callback accepted'
-//     });
-//   }
-// });
-
-app.post('/endpoint-callback-anda', function (request, response) {
-    var json = request.body;
-    var signature = crypto.createHmac("sha256", privateKey)
-        .update(JSON.stringify(json))
-        .digest('hex');
-
-    console.log(signature);
-    console.log(json);
+    // Tetap return 200 untuk mencegah retry berulang dari Tripay
+    res.status(200).json({
+      success: false,
+      error: 'Processing error but callback accepted'
+    });
+  }
 });
-
-app.listen(3000);
-                
 
 // Payment Return Handler
 app.get('/redirect', async (req, res) => {
