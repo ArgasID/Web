@@ -1,0 +1,166 @@
+:root {
+  --primary-color: #4a6bff;
+  --secondary-color: #3a5bef;
+  --card-bg: #1a2035;
+  --dropdown-bg: #2a3255;
+  --text-light: #ffffff;
+  --text-muted: #d1d5db;
+  --border-radius: 8px;
+  --transition: all 0.3s ease;
+}
+
+body {
+  background-color: #0a0f2e;
+  color: white;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.container {
+  width: 100%;
+  max-width: 500px;
+  padding: 20px;
+}
+
+.card {
+  background: var(--card-bg);
+  padding: 2rem;
+  border-radius: var(--border-radius);
+  box-shadow: 0 0 20px rgba(0,0,0,0.4);
+  margin: 0 auto;
+}
+
+.card h2 {
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+  font-size: 1.8rem;
+  text-align: center;
+}
+
+.rank-info {
+  background: rgba(74, 107, 255, 0.1);
+  padding: 1.5rem;
+  border-radius: var(--border-radius);
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+.rank-info p {
+  margin: 0.5rem 0;
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.rank-info h3 {
+  color: var(--primary-color);
+  margin: 0.75rem 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+#payment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+label {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+input, select {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--dropdown-bg);
+  color: var(--text-light);
+  border: 1px solid #3a4255;
+  border-radius: var(--border-radius);
+  font-size: 1rem;
+  box-sizing: border-box;
+  transition: var(--transition);
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(74, 107, 255, 0.2);
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 15px;
+  padding-right: 2rem;
+}
+
+.btn {
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: bold;
+  transition: var(--transition);
+  margin-top: 0.5rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn:hover {
+  background: var(--secondary-color);
+  transform: translateY(-2px);
+}
+
+/* Animations */
+.card {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  body {
+    padding: 1rem;
+  }
+  
+  .card {
+    padding: 1.5rem;
+  }
+  
+  .btn {
+    padding: 0.75rem;
+  }
+}

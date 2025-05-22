@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 // Middleware
 app.use(express.json());
 app.use(express.static(__dirname));
-app.get('/', (req, res) => res.redirect('/home/'));
+// app.get('/', (req, res) => res.redirect('/home/'));
 
 // Function Config DataBase
 const db = {
