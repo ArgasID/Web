@@ -89,7 +89,7 @@ async function prosesPembayaran(rank, harga) {
         };
 
         // Kirim data ke API Tripay
-        const response = await fetch('https://tripay.co.id/api-sandbox/transaction/create', {
+        const response = await fetch('https://tripay.co.id/api/transaction/create', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
