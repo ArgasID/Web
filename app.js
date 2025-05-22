@@ -222,43 +222,97 @@ app.post('/api/bayar-rank', async (req, res) => {
 // Tripay Callback Handler
 app.post('/callback', async (req, res) => {
   const callbackId = `CB-${Date.now()}`;
-  console.log(`[${callbackId}] Callback received:`, req.body);
-
+  
   try {
-    const callbackData = req.body;
+    // 1. Validasi headers dan signature
+    const callbackSignature = req.headers['x-callback-signature'];
+    const callbackEvent = req.headers['x-callback-event'];
+    const jsonData = req.body;
 
-    // Validate required fields
-    const requiredFields = ['merchant_ref', 'status', 'signature', 'reference'];
-    for (const field of requiredFields) {
-      if (!callbackData[field]) {
-        console.error(`[${callbackId}] Missing field: ${field}`);
-        return res.status(400).send('Bad Request');
-      }
+    if (!callbackSignature || !callbackEvent) {
+      console.error(`[${callbackId}] Missing required headers`);
+      return res.status(400).send('Bad Request');
     }
 
-    // Verify signature
-    const generatedSignature = crypto.createHmac('sha256', tripayConfig.privateKey)
-      .update(callbackData.merchant_ref + callbackData.status)
+    // 2. Generate signature
+    const generatedSignature = crypto
+      .createHmac('sha256', tripayConfig.privateKey)
+      .update(JSON.stringify(jsonData))
       .digest('hex');
 
-    if (generatedSignature !== callbackData.signature) {
-      console.error(`[${callbackId}] Invalid signature`);
+    // 3. Verifikasi signature
+    if (generatedSignature !== callbackSignature) {
+      console.error(`[${callbackId}] Signature mismatch`, {
+        received: callbackSignature,
+        expected: generatedSignature
+      });
       return res.status(403).send('Forbidden');
     }
 
-    // Update transaction status
-    await db.query(
-      `UPDATE transactions 
-      SET status = ?, tripay_reference = ?, updated_at = NOW()
-      WHERE merchant_ref = ?`,
-      [callbackData.status, callbackData.reference, callbackData.merchant_ref]
-    );
+    // 4. Validasi event type
+    if (callbackEvent !== 'payment_status') {
+      console.error(`[${callbackId}] Invalid event type: ${callbackEvent}`);
+      return res.status(400).send('Invalid Event Type');
+    }
 
-    console.log(`[${callbackId}] Transaction updated:`, callbackData.merchant_ref);
-    res.status(200).send('OK');
+    // 5. Validasi data transaksi
+    const { reference, status, merchant_ref, amount } = jsonData;
+    if (!reference || !status || !merchant_ref || !amount) {
+      console.error(`[${callbackId}] Missing transaction data`);
+      return res.status(400).send('Incomplete Transaction Data');
+    }
+
+    // 6. Proses status pembayaran
+    console.log(`[${callbackId}] Processing payment status:`, { reference, status });
+
+    const fs = require('fs');
+    const logData = {
+      timestamp: new Date().toISOString(),
+      callback_id: callbackId,
+      reference,
+      status,
+      merchant_ref,
+      amount,
+      event: callbackEvent
+    };
+
+    // 7. Simpan log berdasarkan status
+    switch (status) {
+      case 'PAID':
+        fs.appendFileSync('paid_payments.log', JSON.stringify(logData) + '\n');
+        console.log(`[${callbackId}] Payment SUCCESS: ${reference}`);
+        break;
+
+      case 'FAILED':
+        fs.appendFileSync('failed_payments.log', JSON.stringify(logData) + '\n');
+        console.warn(`[${callbackId}] Payment FAILED: ${reference}`);
+        break;
+
+      case 'EXPIRED':
+        fs.appendFileSync('expired_payments.log', JSON.stringify(logData) + '\n');
+        console.warn(`[${callbackId}] Payment EXPIRED: ${reference}`);
+        break;
+
+      default:
+        fs.appendFileSync('unknown_payments.log', JSON.stringify(logData) + '\n');
+        console.error(`[${callbackId}] Unknown status: ${status}`);
+    }
+
+    // 8. Beri response ke Tripay
+    res.status(200).json({
+      success: true,
+      callback_id: callbackId,
+      message: 'Callback processed'
+    });
+
   } catch (error) {
-    console.error(`[${callbackId}] Callback error:`, error);
-    res.status(200).send('OK'); // Always return 200 to Tripay
+    console.error(`[${callbackId}] Processing error:`, error.stack);
+    
+    // Tetap return 200 untuk mencegah retry berulang dari Tripay
+    res.status(200).json({
+      success: false,
+      error: 'Processing error but callback accepted'
+    });
   }
 });
 
