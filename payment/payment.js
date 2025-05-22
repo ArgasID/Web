@@ -31,8 +31,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // Tambahkan di bagian atas file
 const configTripay = {
-    kodeMerchant: 'T0001',
-    privateKey: 'PRIVATE_KEY_ANDA_DARI_TRIPAY'
+    kodeMerchant: 'T40456',
+    privateKey: '0ns6O-O3yy9-6WUom-NK2ve-IhC7z'
 };
 
 // Fungsi untuk generate signature
