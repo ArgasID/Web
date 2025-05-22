@@ -150,7 +150,7 @@ function handleLoginSuccess(username, platform) {
   
   // Check for pending redirect or purchase
   const urlParams = new URLSearchParams(window.location.search);
-  const redirectUrl = urlParams.get('redirect') || '/home/';
+  const redirectUrl = urlParams.get('redirect') || '/';
   window.location.href = redirectUrl;
 }
 
