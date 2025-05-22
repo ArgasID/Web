@@ -31,8 +31,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
 // Tambahkan di bagian atas file
 const configTripay = {
-    kodeMerchant: 'T40499',
-    privateKey: 'WN7qd-YWXNB-B3Z43-Je36m-uKTGG'
+    kodeMerchant: 'T40456',
+    privateKey: '0ns6O-O3yy9-6WUom-NK2ve-IhC7z'
 };
 
 // Fungsi untuk generate signature
@@ -89,7 +89,7 @@ async function prosesPembayaran(rank, harga) {
         };
 
         // Kirim data ke API Tripay
-        const response = await fetch('https://tripay.co.id/api/transaction/create', {
+        const response = await fetch('https://tripay.co.id/api-sandbox/transaction/create', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
