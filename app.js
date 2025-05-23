@@ -207,56 +207,65 @@ app.post('/api/bayar-rank', async (req, res) => {
   const transactionId = `TRX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   
   try {
-    console.log(`[${transactionId}] Payment request received`);
+    console.log(`[${transactionId}] Memulai proses pembayaran`);
     
-    // Validasi input
-    const { rank, harga, name, email, phone, paymentMethod, merchant_ref } = req.body;
+    // 1. Validasi Input
+    const { rank, harga, name, email, phone, paymentMethod } = req.body;
     
-    // Validasi harga harus number
-    const amount = parseInt(harga);
-    if (isNaN(amount) || amount <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Jumlah pembayaran tidak valid'
-      });
-    }
-
-    // Validasi field required
-    const requiredFields = { rank, name, email, phone, paymentMethod };
-    for (const [field, value] of Object.entries(requiredFields)) {
-      if (!value) {
+    // Validasi field wajib
+    const requiredFields = { 
+      rank: 'Rank', 
+      harga: 'Jumlah pembayaran', 
+      name: 'Nama lengkap', 
+      email: 'Email', 
+      phone: 'Nomor telepon', 
+      paymentMethod: 'Metode pembayaran' 
+    };
+    
+    for (const [field, fieldName] of Object.entries(requiredFields)) {
+      if (!req.body[field]) {
+        console.warn(`[${transactionId}] ${fieldName} tidak boleh kosong`);
         return res.status(400).json({
           success: false,
-          message: `Field ${field} harus diisi`
+          message: `${fieldName} tidak boleh kosong`
         });
       }
+    }
+
+    // Validasi format harga
+    const amount = parseInt(harga);
+    if (isNaN(amount) || amount <= 0) {
+      console.warn(`[${transactionId}] Jumlah pembayaran tidak valid: ${harga}`);
+      return res.status(400).json({
+        success: false,
+        message: 'Jumlah pembayaran harus berupa angka dan lebih besar dari 0'
+      });
     }
 
     // Validasi format email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
+      console.warn(`[${transactionId}] Format email tidak valid: ${email}`);
       return res.status(400).json({
         success: false,
         message: 'Format email tidak valid'
       });
     }
 
-    // Format nomor telepon
+    // 2. Format Data
     const formattedPhone = phone.startsWith('0') ? '62' + phone.slice(1) : phone;
-
-    // Generate merchant_ref jika tidak ada
-    const finalMerchantRef = merchant_ref || generateMerchantRef();
-
-    // Generate signature
+    const merchant_ref = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    
+    // 3. Generate Signature
     const signature = crypto.createHmac('sha256', tripayConfig.privateKey)
-      .update(tripayConfig.kodeMerchant + finalMerchantRef + amount)
+      .update(tripayConfig.kodeMerchant + merchant_ref + amount)
       .digest('hex');
 
-    // Persiapkan data transaksi
+    // 4. Siapkan Data Transaksi
     const transactionData = {
       method: paymentMethod,
-      merchant_ref: finalMerchantRef,
-      amount: amount,
+      merchant_ref,
+      amount,
       customer_name: name,
       customer_email: email,
       customer_phone: formattedPhone,
@@ -271,9 +280,12 @@ app.post('/api/bayar-rank', async (req, res) => {
       signature
     };
 
-    console.log(`[${transactionId}] Transaction data:`, transactionData);
+    console.log(`[${transactionId}] Mengirim data ke Tripay`, {
+      ...transactionData,
+      customer_phone: '***' + formattedPhone.slice(-4) // Mask nomor telepon
+    });
 
-    // Kirim ke API Tripay
+    // 5. Kirim ke API Tripay
     const tripayResponse = await fetch(tripayConfig.urlBuatTransaksi, {
       method: 'POST',
       headers: {
@@ -284,50 +296,69 @@ app.post('/api/bayar-rank', async (req, res) => {
     });
 
     const result = await tripayResponse.json();
-    console.log(`[${transactionId}] Tripay response:`, result);
+    console.log(`[${transactionId}] Respons dari Tripay:`, result);
 
-    if (!tripayResponse.ok || !result.success) {
-      const errorMessage = result.message || 'Gagal memproses pembayaran';
-      console.error(`[${transactionId}] Tripay API error:`, errorMessage);
+    // 6. Handle Response Tripay
+    if (!tripayResponse.ok) {
+      const errorMessage = result.message || 'Terjadi kesalahan saat memproses pembayaran';
       
-      // Simpan error ke database
-      await db.query(
-        `INSERT INTO transaction_errors 
-        (transaction_id, merchant_ref, error_message, response_data)
-        VALUES (?, ?, ?, ?)`,
-        [transactionId, finalMerchantRef, errorMessage, JSON.stringify(result)]
-      );
-      
+      console.error(`[${transactionId}] Error Tripay:`, {
+        status: tripayResponse.status,
+        error: errorMessage,
+        response: result
+      });
+
+      // Klasifikasi jenis error
+      let userMessage;
+      if (tripayResponse.status === 400) {
+        userMessage = 'Data pembayaran tidak valid. Silakan periksa kembali.';
+      } else if (tripayResponse.status === 401) {
+        userMessage = 'Autentikasi gagal. Silakan hubungi admin.';
+      } else if (tripayResponse.status >= 500) {
+        userMessage = 'Sistem pembayaran sedang gangguan. Silakan coba lagi nanti.';
+      } else {
+        userMessage = errorMessage.includes('Internal service error') 
+          ? 'Sistem pembayaran sedang sibuk' 
+          : errorMessage;
+      }
+
       return res.status(400).json({
         success: false,
-        message: errorMessage.includes('Internal service error') 
-          ? 'Sistem pembayaran sedang sibuk, silakan coba lagi nanti' 
-          : errorMessage
+        message: userMessage,
+        error_code: tripayResponse.status
       });
     }
 
-    // Simpan transaksi ke database
-    await db.query(
-      `INSERT INTO transactions 
-      (transaction_id, merchant_ref, customer_name, email, phone, amount, status, payment_method, checkout_url)
-      VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?, ?)`,
-      [transactionId, finalMerchantRef, name, email, formattedPhone, amount, paymentMethod, result.data.checkout_url]
-    );
+    // 7. Simpan Transaksi (jika menggunakan database)
+    try {
+      await db.query(
+        `INSERT INTO transactions 
+        (transaction_id, merchant_ref, customer_name, email, phone, amount, status, payment_method, checkout_url)
+        VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?, ?)`,
+        [transactionId, merchant_ref, name, email, formattedPhone, amount, paymentMethod, result.data.checkout_url]
+      );
+    } catch (dbError) {
+      console.error(`[${transactionId}] Gagal menyimpan transaksi:`, dbError);
+      // Tetap lanjutkan karena transaksi sudah berhasil di Tripay
+    }
 
+    // 8. Response Sukses
     return res.json({
       success: true,
       data: {
         checkout_url: result.data.checkout_url,
         transaction_id: transactionId,
-        merchant_ref: finalMerchantRef
+        merchant_ref,
+        instructions: 'Silakan selesaikan pembayaran dalam 1 jam'
       }
     });
 
   } catch (error) {
-    console.error(`[${transactionId}] Error:`, error);
+    console.error(`[${transactionId}] Error sistem:`, error);
     return res.status(500).json({
       success: false,
-      message: 'Terjadi kesalahan server'
+      message: 'Terjadi kesalahan sistem. Silakan coba lagi atau hubungi admin.',
+      error_code: 'INTERNAL_ERROR'
     });
   }
 });
