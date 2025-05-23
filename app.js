@@ -4,12 +4,21 @@ const mysql = require('mysql2/promise');
 const path = require('path');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
+const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
 app.use(express.static(__dirname));
+app.use(express.urlencoded({ extended: true }));
+
+// Enable CORS for frontend
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  next();
+});
 
 // Database configuration
 const db = {
@@ -117,45 +126,65 @@ app.post('/buy', async (req, res) => {
   }
 });
 
-// Tripay Payment System
-const tripayConfig = require('./config/tripay');
+// Tripay Payment Configuration
+const tripayConfig = {
+  kodeMerchant: 'T40499',
+  privateKey: 'WN7qd-YWXNB-B3Z43-Je36m-uKTGG',
+  apiKey: 'PCYJ6jKIFZgmMlF26cm5SDLBmbeR678VuBzrZqIF',
+  urlBuatTransaksi: 'https://tripay.co.id/api/transaction/create',
+  callbackUrl: 'https://web.glowbit.fun/callback',
+  returnUrl: 'https://web.glowbit.fun/redirect'
+};
 
-// Create Payment
+// API Endpoint untuk Pembayaran dari Frontend
 app.post('/api/bayar-rank', async (req, res) => {
   const transactionId = `TRX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  const fs = require('fs');
   
   try {
     console.log(`[${transactionId}] Payment request received`);
     
-    // Validate input
-    const { rank, harga, name, email, phone, paymentMethod } = req.body;
-    const requiredFields = { rank, harga, name, email, phone, paymentMethod };
+    // Validasi input
+    const { rank, harga, name, email, phone, paymentMethod, merchant_ref } = req.body;
     
-    for (const [field, value] of Object.entries(requiredFields)) {
-      if (!value) {
-        console.warn(`[${transactionId}] Missing field: ${field}`);
-        return res.status(400).json({
-          success: false,
-          message: `Field ${field} harus diisi`
-        });
-      }
+    // Validasi field required
+    if (!rank || !harga || !name || !email || !phone || !paymentMethod) {
+      return res.status(400).json({
+        success: false,
+        message: 'Semua field harus diisi'
+      });
     }
 
-    // Generate transaction reference
-    const merchant_ref = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    // Validasi format email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Format email tidak valid'
+      });
+    }
+
+    // Validasi nomor HP
+    const phoneRegex = /^[0-9]{10,13}$/;
+    if (!phoneRegex.test(phone)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Format nomor HP tidak valid'
+      });
+    }
+
+    // Generate signature
     const signature = crypto.createHmac('sha256', tripayConfig.privateKey)
       .update(tripayConfig.kodeMerchant + merchant_ref + harga)
       .digest('hex');
 
-    // Prepare transaction data
+    // Persiapkan data transaksi
     const transactionData = {
       method: paymentMethod,
-      merchant_ref,
+      merchant_ref: merchant_ref || generateMerchantRef(),
       amount: harga,
       customer_name: name,
       customer_email: email,
-      customer_phone: phone.replace(/^0/, '62'), // Convert to international format
+      customer_phone: phone.replace(/^0/, '62'),
       order_items: [{
         name: `Rank ${rank}`,
         price: harga,
@@ -163,13 +192,11 @@ app.post('/api/bayar-rank', async (req, res) => {
       }],
       callback_url: tripayConfig.callbackUrl,
       return_url: tripayConfig.returnUrl,
-      expired_time: Math.floor(Date.now() / 1000) + 3600, // 1 hour
+      expired_time: Math.floor(Date.now() / 1000) + 3600, // 1 jam
       signature
     };
 
-    console.log(`[${transactionId}] Sending to Tripay:`, transactionData);
-
-    // Send to Tripay API
+    // Kirim ke API Tripay
     const tripayResponse = await fetch(tripayConfig.urlBuatTransaksi, {
       method: 'POST',
       headers: {
@@ -181,52 +208,39 @@ app.post('/api/bayar-rank', async (req, res) => {
 
     const result = await tripayResponse.json();
 
-    if (!tripayResponse.ok) {
-      console.error(`[${transactionId}] Tripay API error:`, result);
+    if (!result.success) {
       throw new Error(result.message || 'Gagal memproses pembayaran');
     }
 
-    if (result.success) {
-      console.log(`[${transactionId}] Payment created successfully`);
-      
-      // Log transaction to file instead of database
-      const logEntry = {
-        timestamp: new Date().toISOString(),
-        transaction_id: transactionId,
-        merchant_ref,
-        customer_name: name,
-        email,
-        phone,
-        amount: harga,
-        status: 'PENDING',
-        payment_method: paymentMethod,
-        checkout_url: result.data.checkout_url
-      };
-      
-      fs.appendFileSync('transactions.log', JSON.stringify(logEntry) + '\n');
+    // Simpan transaksi ke database
+    await db.query(
+      `INSERT INTO transactions 
+      (transaction_id, merchant_ref, customer_name, email, phone, amount, status, payment_method, checkout_url)
+      VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?, ?)`,
+      [transactionId, transactionData.merchant_ref, name, email, phone, harga, paymentMethod, result.data.checkout_url]
+    );
 
-      return res.json({
-        success: true,
-        data: {
-          checkout_url: result.data.checkout_url,
-          transaction_id: transactionId
-        }
-      });
-    } else {
-      console.error(`[${transactionId}] Tripay payment failed:`, result.message);
-      return res.status(400).json({
-        success: false,
-        message: result.message || 'Gagal memproses pembayaran'
-      });
-    }
+    return res.json({
+      success: true,
+      data: {
+        checkout_url: result.data.checkout_url,
+        transaction_id: transactionId
+      }
+    });
+
   } catch (error) {
     console.error(`[${transactionId}] Error:`, error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: 'Terjadi kesalahan server'
+      message: error.message || 'Terjadi kesalahan server'
     });
   }
 });
+
+// Fungsi pembantu untuk generate merchant reference
+function generateMerchantRef() {
+  return 'INV-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+}
 
 // Tripay Callback Handler
 app.post('/callback', async (req, res) => {

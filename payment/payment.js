@@ -32,20 +32,8 @@ document.addEventListener("DOMContentLoaded", function() {
 // Konfigurasi Tripay
 const configTripay = {
     kodeMerchant: 'T40499',
-    privateKey: 'WN7qd-YWXNB-B3Z43-Je36m-uKTGG',
-    apiKey: 'PCYJ6jKIFZgmMlF26cm5SDLBmbeR678VuBzrZqIF' // Tambahkan API key yang sesuai
+    apiKey: 'PCYJ6jKIFZgmMlF26cm5SDLBmbeR678VuBzrZqIF'
 };
-
-// Fungsi untuk generate signature (menggunakan CryptoJS)
-function generateSignature(merchant_ref, amount) {
-    // Pastikan Anda telah memuat library CryptoJS di HTML Anda
-    // <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    const signature = CryptoJS.HmacSHA256(
-        configTripay.kodeMerchant + merchant_ref + amount,
-        configTripay.privateKey
-    ).toString(CryptoJS.enc.Hex);
-    return signature;
-}
 
 // Fungsi untuk generate kode referensi acak
 function generateMerchantRef() {
@@ -80,37 +68,22 @@ async function prosesPembayaran(rank, harga) {
 
     try {
         const merchant_ref = generateMerchantRef();
-        const signature = generateSignature(merchant_ref, harga);
 
-        // Data untuk dikirim ke API Tripay
-        const dataTransaksi = {
-            method: paymentMethod,
-            merchant_ref: merchant_ref,
-            amount: harga,
-            customer_name: name,
-            customer_email: email,
-            customer_phone: phone,
-            order_items: [
-                {
-                    name: rank,
-                    price: harga,
-                    quantity: 1
-                }
-            ],
-            callback_url: 'https://web.glowbit.fun/callback',
-            return_url: 'https://web.glowbit.fun/redirect',
-            expired_time: Math.floor(Date.now() / 1000) + (60 * 60), // 1 jam dari sekarang
-            signature: signature
-        };
-
-        // Kirim data ke API Tripay
-        const response = await fetch('https://tripay.co.id/api/transaction/create', {
+        // Kirim data ke backend untuk diproses
+        const response = await fetch('/api/bayar-rank', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + configTripay.apiKey
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify(dataTransaksi)
+            body: JSON.stringify({
+                rank,
+                harga,
+                name,
+                email,
+                phone,
+                paymentMethod,
+                merchant_ref
+            })
         });
 
         const result = await response.json();
