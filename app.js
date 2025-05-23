@@ -203,165 +203,115 @@ app.post('/buy', async (req, res) => {
   }
 });
 
+// Endpoint pembayaran
 app.post('/api/bayar-rank', async (req, res) => {
-  const transactionId = `TRX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  
-  try {
-    console.log(`[${transactionId}] Memulai proses pembayaran`);
+    const transactionId = `TRX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
     
-    // 1. Validasi Input
-    const { rank, harga, name, email, phone, paymentMethod } = req.body;
-    
-    // Validasi field wajib
-    const requiredFields = { 
-      rank: 'Rank', 
-      harga: 'Jumlah pembayaran', 
-      name: 'Nama lengkap', 
-      email: 'Email', 
-      phone: 'Nomor telepon', 
-      paymentMethod: 'Metode pembayaran' 
-    };
-    
-    for (const [field, fieldName] of Object.entries(requiredFields)) {
-      if (!req.body[field]) {
-        console.warn(`[${transactionId}] ${fieldName} tidak boleh kosong`);
-        return res.status(400).json({
-          success: false,
-          message: `${fieldName} tidak boleh kosong`
-        });
-      }
-    }
-
-    // Validasi format harga
-    const amount = parseInt(harga);
-    if (isNaN(amount) || amount <= 0) {
-      console.warn(`[${transactionId}] Jumlah pembayaran tidak valid: ${harga}`);
-      return res.status(400).json({
-        success: false,
-        message: 'Jumlah pembayaran harus berupa angka dan lebih besar dari 0'
-      });
-    }
-
-    // Validasi format email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      console.warn(`[${transactionId}] Format email tidak valid: ${email}`);
-      return res.status(400).json({
-        success: false,
-        message: 'Format email tidak valid'
-      });
-    }
-
-    // 2. Format Data
-    const formattedPhone = phone.startsWith('0') ? '62' + phone.slice(1) : phone;
-    const merchant_ref = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-    
-    // 3. Generate Signature
-    const signature = crypto.createHmac('sha256', tripayConfig.privateKey)
-      .update(tripayConfig.kodeMerchant + merchant_ref + amount)
-      .digest('hex');
-
-    // 4. Siapkan Data Transaksi
-    const transactionData = {
-      method: paymentMethod,
-      merchant_ref,
-      amount,
-      customer_name: name,
-      customer_email: email,
-      customer_phone: formattedPhone,
-      order_items: [{
-        name: `Rank ${rank}`,
-        price: amount,
-        quantity: 1
-      }],
-      callback_url: tripayConfig.callbackUrl,
-      return_url: tripayConfig.returnUrl,
-      expired_time: Math.floor(Date.now() / 1000) + 3600, // 1 jam
-      signature
-    };
-
-    console.log(`[${transactionId}] Mengirim data ke Tripay`, {
-      ...transactionData,
-      customer_phone: '***' + formattedPhone.slice(-4) // Mask nomor telepon
-    });
-
-    // 5. Kirim ke API Tripay
-    const tripayResponse = await fetch(tripayConfig.urlBuatTransaksi, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${tripayConfig.apiKey}`
-      },
-      body: JSON.stringify(transactionData)
-    });
-
-    const result = await tripayResponse.json();
-    console.log(`[${transactionId}] Respons dari Tripay:`, result);
-
-    // 6. Handle Response Tripay
-    if (!tripayResponse.ok) {
-      const errorMessage = result.message || 'Terjadi kesalahan saat memproses pembayaran';
-      
-      console.error(`[${transactionId}] Error Tripay:`, {
-        status: tripayResponse.status,
-        error: errorMessage,
-        response: result
-      });
-
-      // Klasifikasi jenis error
-      let userMessage;
-      if (tripayResponse.status === 400) {
-        userMessage = 'Data pembayaran tidak valid. Silakan periksa kembali.';
-      } else if (tripayResponse.status === 401) {
-        userMessage = 'Autentikasi gagal. Silakan hubungi admin.';
-      } else if (tripayResponse.status >= 500) {
-        userMessage = 'Sistem pembayaran sedang gangguan. Silakan coba lagi nanti.';
-      } else {
-        userMessage = errorMessage.includes('Internal service error') 
-          ? 'Sistem pembayaran sedang sibuk' 
-          : errorMessage;
-      }
-
-      return res.status(400).json({
-        success: false,
-        message: userMessage,
-        error_code: tripayResponse.status
-      });
-    }
-
-    // 7. Simpan Transaksi (jika menggunakan database)
     try {
-      await db.query(
-        `INSERT INTO transactions 
-        (transaction_id, merchant_ref, customer_name, email, phone, amount, status, payment_method, checkout_url)
-        VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?, ?)`,
-        [transactionId, merchant_ref, name, email, formattedPhone, amount, paymentMethod, result.data.checkout_url]
-      );
-    } catch (dbError) {
-      console.error(`[${transactionId}] Gagal menyimpan transaksi:`, dbError);
-      // Tetap lanjutkan karena transaksi sudah berhasil di Tripay
+        const { rank, harga, name, email, phone, paymentMethod } = req.body;
+
+        // Validasi input
+        if (!rank || !harga || !name || !email || !phone || !paymentMethod) {
+            return res.status(400).json({
+                success: false,
+                message: 'Semua field harus diisi'
+            });
+        }
+
+        // Validasi nomor telepon
+        if (!/^08\d{8,11}$/.test(phone)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Format nomor harus 08xxxxxxxx (10-13 digit)'
+            });
+        }
+
+        const amount = parseInt(harga);
+        if (isNaN(amount) || amount <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Jumlah pembayaran tidak valid'
+            });
+        }
+
+        // Generate merchant_ref dan signature
+        const merchant_ref = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        const signature = crypto.createHmac('sha256', tripayConfig.privateKey)
+            .update(tripayConfig.kodeMerchant + merchant_ref + amount)
+            .digest('hex');
+
+        // Siapkan data untuk Tripay
+        const transactionData = {
+            method: paymentMethod,
+            merchant_ref,
+            amount,
+            customer_name: name,
+            customer_email: email,
+            customer_phone: phone, // Menggunakan format 08
+            order_items: [{
+                name: `Rank ${rank}`,
+                price: amount,
+                quantity: 1
+            }],
+            callback_url: tripayConfig.callbackUrl,
+            return_url: tripayConfig.returnUrl,
+            expired_time: Math.floor(Date.now() / 1000) + 3600, // 1 jam
+            signature
+        };
+
+        // Kirim ke Tripay API
+        const tripayResponse = await fetch(`${tripayConfig.baseUrl}/transaction/create`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${tripayConfig.apiKey}`
+            },
+            body: JSON.stringify(transactionData)
+        });
+
+        const result = await tripayResponse.json();
+
+        if (!tripayResponse.ok) {
+            console.error('Error Tripay:', result);
+            return res.status(400).json({
+                success: false,
+                message: result.message || 'Gagal memproses pembayaran'
+            });
+        }
+
+        // Simpan transaksi ke database
+        await db.query(
+            `INSERT INTO transactions 
+            (transaction_id, merchant_ref, customer_name, email, phone, amount, status, payment_method, checkout_url)
+            VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?, ?)`,
+            [transactionId, merchant_ref, name, email, phone, amount, paymentMethod, result.data.checkout_url]
+        );
+
+        res.json({
+            success: true,
+            data: {
+                checkout_url: result.data.checkout_url,
+                transaction_id: transactionId
+            }
+        });
+
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Terjadi kesalahan server'
+        });
     }
-
-    // 8. Response Sukses
-    return res.json({
-      success: true,
-      data: {
-        checkout_url: result.data.checkout_url,
-        transaction_id: transactionId,
-        merchant_ref,
-        instructions: 'Silakan selesaikan pembayaran dalam 1 jam'
-      }
-    });
-
-  } catch (error) {
-    console.error(`[${transactionId}] Error sistem:`, error);
-    return res.status(500).json({
-      success: false,
-      message: 'Terjadi kesalahan sistem. Silakan coba lagi atau hubungi admin.',
-      error_code: 'INTERNAL_ERROR'
-    });
-  }
 });
+
+// Fungsi format nomor telepon (untuk callback)
+function formatPhoneNumber(phone) {
+    let cleaned = phone.replace(/\D/g, '');
+    if (cleaned.startsWith('62')) {
+        cleaned = '0' + cleaned.slice(2);
+    }
+    return cleaned;
+}
 
 // Fungsi pembantu untuk generate merchant reference
 function generateMerchantRef() {

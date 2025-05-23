@@ -10,7 +10,12 @@ document.addEventListener("DOMContentLoaded", function() {
       document.getElementById("rank-name").textContent = rank.toUpperCase();
       document.getElementById("rank-price").textContent = formatRupiah(numericHarga);
       
-      // Simpan data di form untuk proses pembayaran
+      // Format nomor telepon saat user mengetik
+      document.getElementById('phone').addEventListener('input', function(e) {
+        this.value = formatPhoneInput(this.value);
+      });
+
+      // Proses pembayaran saat form submit
       document.getElementById('payment-form').addEventListener('submit', function(e) {
         e.preventDefault();
         prosesPembayaran(rank, numericHarga);
@@ -19,11 +24,29 @@ document.addEventListener("DOMContentLoaded", function() {
       throw new Error("Data pembelian tidak valid");
     }
 
+    // Fungsi untuk format rupiah
     function formatRupiah(angka) {
       return "Rp" + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
     }
+
+    // Fungsi untuk format input nomor telepon
+    function formatPhoneInput(phone) {
+      // Hapus semua karakter non-angka
+      let cleaned = phone.replace(/\D/g, '');
+      
+      // Konversi +62 atau 62 menjadi 0
+      if (cleaned.startsWith('62')) {
+        cleaned = '0' + cleaned.slice(2);
+      }
+      // Pastikan mulai dengan 0
+      else if (!cleaned.startsWith('0') && cleaned.length > 0) {
+        cleaned = '0' + cleaned;
+      }
+      
+      return cleaned;
+    }
   } catch (error) {
-    console.error("Payment page error:", error);
+    console.error("Error:", error);
     alert("Data pembelian tidak valid. Silakan pilih rank kembali.");
     window.location.href = "/category/ranks/";
   }
@@ -35,20 +58,16 @@ const configTripay = {
     apiKey: 'PCYJ6jKIFZgmMlF26cm5SDLBmbeR678VuBzrZqIF'
 };
 
-// Fungsi untuk generate kode referensi acak
-function generateMerchantRef() {
-    return 'INV' + Math.floor(Math.random() * 1000000);
-}
-
+// Fungsi untuk memproses pembayaran
 async function prosesPembayaran(rank, harga) {
     const name = document.getElementById('name').value.trim();
     const email = document.getElementById('email').value.trim();
-    const phone = document.getElementById('phone').value.trim();
+    let phone = document.getElementById('phone').value.trim();
     const paymentMethod = document.getElementById('payment-method').value;
 
     // Validasi form
     if (!name || !email || !phone || !paymentMethod) {
-        alert("Semua field harus diisi!");
+        alert("Semua kolom harus diisi!");
         return;
     }
 
@@ -59,17 +78,16 @@ async function prosesPembayaran(rank, harga) {
         return;
     }
 
-    // Validasi nomor HP
-    const phoneRegex = /^[0-9]{10,13}$/;
-    if (!phoneRegex.test(phone)) {
-        alert("Format nomor HP tidak valid!");
+    // Format nomor telepon
+    try {
+        phone = formatPhoneNumber(phone);
+    } catch (error) {
+        alert(error.message);
         return;
     }
 
     try {
-        const merchant_ref = generateMerchantRef();
-
-        // Kirim data ke backend untuk diproses
+        // Kirim data ke backend
         const response = await fetch('/api/bayar-rank', {
             method: 'POST',
             headers: {
@@ -81,21 +99,45 @@ async function prosesPembayaran(rank, harga) {
                 name,
                 email,
                 phone,
-                paymentMethod,
-                merchant_ref
+                paymentMethod
             })
         });
 
         const result = await response.json();
 
+        if (!response.ok) {
+            throw new Error(result.message || 'Gagal memproses pembayaran');
+        }
+
         if (result.success && result.data.checkout_url) {
-            // Redirect ke halaman pembayaran Tripay
             window.location.href = result.data.checkout_url;
         } else {
-            alert(`Gagal memproses pembayaran: ${result.message || 'Error tidak diketahui'}`);
+            alert(result.message || 'Gagal memproses pembayaran');
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Terjadi kesalahan saat memproses pembayaran');
+        alert(`Error: ${error.message || 'Terjadi kesalahan saat memproses pembayaran'}`);
     }
+}
+
+// Fungsi untuk standarisasi nomor telepon
+function formatPhoneNumber(inputPhone) {
+    // Hapus semua karakter non-angka
+    let cleaned = inputPhone.replace(/\D/g, '');
+    
+    // Konversi +62 atau 62 menjadi 0
+    if (cleaned.startsWith('62')) {
+        cleaned = '0' + cleaned.slice(2);
+    } 
+    // Pastikan mulai dengan 0
+    else if (!cleaned.startsWith('0') && cleaned.length > 0) {
+        cleaned = '0' + cleaned;
+    }
+    
+    // Validasi panjang nomor
+    if (cleaned.length < 10 || cleaned.length > 13) {
+        throw new Error("Nomor telepon harus 10-13 digit (contoh: 081234567890)");
+    }
+    
+    return cleaned;
 }
