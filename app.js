@@ -1,7 +1,6 @@
 require('./config');
 const express = require('express');
 const mysql = require('mysql2/promise');
-const path = require('path');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
 const fs = require('fs');
@@ -13,24 +12,102 @@ app.use(express.json());
 app.use(express.static(__dirname));
 app.use(express.urlencoded({ extended: true }));
 
-// Enable CORS for frontend
+// Enable CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   next();
 });
 
-// Database configuration
+// Database configuration with auto-create tables
 const db = {
+  conn: null,
+
+  async connect() {
+    this.conn = await mysql.createConnection(global.dbConfig);
+    await this.createTables();
+  },
+
   async query(sql, params) {
-    const conn = await mysql.createConnection(global.dbConfig);
+    if (!this.conn) await this.connect();
+    const [rows] = await this.conn.execute(sql, params || []);
+    return rows;
+  },
+
+  async createTables() {
     try {
-      const [rows] = await conn.execute(sql, params || []);
-      return rows;
-    } finally {
-      await conn.end();
+      // Create players table
+      await this.conn.execute(`
+        CREATE TABLE IF NOT EXISTS players (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          name VARCHAR(50) NOT NULL UNIQUE,
+          uuid VARCHAR(36),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // Create pending_commands table
+      await this.conn.execute(`
+        CREATE TABLE IF NOT EXISTS pending_commands (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          command TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      // Create transactions table
+      await this.conn.execute(`
+        CREATE TABLE IF NOT EXISTS transactions (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          transaction_id VARCHAR(50) NOT NULL,
+          merchant_ref VARCHAR(50) NOT NULL,
+          customer_name VARCHAR(100) NOT NULL,
+          email VARCHAR(100) NOT NULL,
+          phone VARCHAR(20) NOT NULL,
+          amount INT NOT NULL,
+          status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+          payment_method VARCHAR(50) NOT NULL,
+          checkout_url TEXT NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(transaction_id),
+          UNIQUE(merchant_ref)
+        )
+      `);
+
+      // Create transaction_errors table for logging
+      await this.conn.execute(`
+        CREATE TABLE IF NOT EXISTS transaction_errors (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          transaction_id VARCHAR(50),
+          merchant_ref VARCHAR(50),
+          error_message TEXT NOT NULL,
+          response_data TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
+
+      console.log('Database tables verified/created');
+    } catch (err) {
+      console.error('Error creating tables:', err);
+      throw err;
     }
   }
+};
+
+// Initialize database connection
+db.connect().catch(err => {
+  console.error('Failed to initialize database:', err);
+  process.exit(1);
+});
+
+// Tripay Payment Configuration
+const tripayConfig = {
+  kodeMerchant: 'T40499',
+  privateKey: 'WN7qd-YWXNB-B3Z43-Je36m-uKTGG',
+  apiKey: 'PCYJ6jKIFZgmMlF26cm5SDLBmbeR678VuBzrZqIF',
+  urlBuatTransaksi: 'https://tripay.co.id/api/transaction/create',
+  callbackUrl: 'https://web.glowbit.fun/callback',
+  returnUrl: 'https://web.glowbit.fun/redirect'
 };
 
 // Username Check
@@ -126,17 +203,6 @@ app.post('/buy', async (req, res) => {
   }
 });
 
-// Tripay Payment Configuration
-const tripayConfig = {
-  kodeMerchant: 'T40499',
-  privateKey: 'WN7qd-YWXNB-B3Z43-Je36m-uKTGG',
-  apiKey: 'PCYJ6jKIFZgmMlF26cm5SDLBmbeR678VuBzrZqIF',
-  urlBuatTransaksi: 'https://tripay.co.id/api/transaction/create',
-  callbackUrl: 'https://web.glowbit.fun/callback',
-  returnUrl: 'https://web.glowbit.fun/redirect'
-};
-
-// API Endpoint untuk Pembayaran dari Frontend
 app.post('/api/bayar-rank', async (req, res) => {
   const transactionId = `TRX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   
@@ -146,12 +212,24 @@ app.post('/api/bayar-rank', async (req, res) => {
     // Validasi input
     const { rank, harga, name, email, phone, paymentMethod, merchant_ref } = req.body;
     
-    // Validasi field required
-    if (!rank || !harga || !name || !email || !phone || !paymentMethod) {
+    // Validasi harga harus number
+    const amount = parseInt(harga);
+    if (isNaN(amount) || amount <= 0) {
       return res.status(400).json({
         success: false,
-        message: 'Semua field harus diisi'
+        message: 'Jumlah pembayaran tidak valid'
       });
+    }
+
+    // Validasi field required
+    const requiredFields = { rank, name, email, phone, paymentMethod };
+    for (const [field, value] of Object.entries(requiredFields)) {
+      if (!value) {
+        return res.status(400).json({
+          success: false,
+          message: `Field ${field} harus diisi`
+        });
+      }
     }
 
     // Validasi format email
@@ -163,31 +241,28 @@ app.post('/api/bayar-rank', async (req, res) => {
       });
     }
 
-    // Validasi nomor HP
-    const phoneRegex = /^[0-9]{10,13}$/;
-    if (!phoneRegex.test(phone)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Format nomor HP tidak valid'
-      });
-    }
+    // Format nomor telepon
+    const formattedPhone = phone.startsWith('0') ? '62' + phone.slice(1) : phone;
+
+    // Generate merchant_ref jika tidak ada
+    const finalMerchantRef = merchant_ref || generateMerchantRef();
 
     // Generate signature
     const signature = crypto.createHmac('sha256', tripayConfig.privateKey)
-      .update(tripayConfig.kodeMerchant + merchant_ref + harga)
+      .update(tripayConfig.kodeMerchant + finalMerchantRef + amount)
       .digest('hex');
 
     // Persiapkan data transaksi
     const transactionData = {
       method: paymentMethod,
-      merchant_ref: merchant_ref || generateMerchantRef(),
-      amount: harga,
+      merchant_ref: finalMerchantRef,
+      amount: amount,
       customer_name: name,
       customer_email: email,
-      customer_phone: phone.replace(/^0/, '62'),
+      customer_phone: formattedPhone,
       order_items: [{
         name: `Rank ${rank}`,
-        price: harga,
+        price: amount,
         quantity: 1
       }],
       callback_url: tripayConfig.callbackUrl,
@@ -195,6 +270,8 @@ app.post('/api/bayar-rank', async (req, res) => {
       expired_time: Math.floor(Date.now() / 1000) + 3600, // 1 jam
       signature
     };
+
+    console.log(`[${transactionId}] Transaction data:`, transactionData);
 
     // Kirim ke API Tripay
     const tripayResponse = await fetch(tripayConfig.urlBuatTransaksi, {
@@ -207,9 +284,26 @@ app.post('/api/bayar-rank', async (req, res) => {
     });
 
     const result = await tripayResponse.json();
+    console.log(`[${transactionId}] Tripay response:`, result);
 
-    if (!result.success) {
-      throw new Error(result.message || 'Gagal memproses pembayaran');
+    if (!tripayResponse.ok || !result.success) {
+      const errorMessage = result.message || 'Gagal memproses pembayaran';
+      console.error(`[${transactionId}] Tripay API error:`, errorMessage);
+      
+      // Simpan error ke database
+      await db.query(
+        `INSERT INTO transaction_errors 
+        (transaction_id, merchant_ref, error_message, response_data)
+        VALUES (?, ?, ?, ?)`,
+        [transactionId, finalMerchantRef, errorMessage, JSON.stringify(result)]
+      );
+      
+      return res.status(400).json({
+        success: false,
+        message: errorMessage.includes('Internal service error') 
+          ? 'Sistem pembayaran sedang sibuk, silakan coba lagi nanti' 
+          : errorMessage
+      });
     }
 
     // Simpan transaksi ke database
@@ -217,14 +311,15 @@ app.post('/api/bayar-rank', async (req, res) => {
       `INSERT INTO transactions 
       (transaction_id, merchant_ref, customer_name, email, phone, amount, status, payment_method, checkout_url)
       VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?, ?)`,
-      [transactionId, transactionData.merchant_ref, name, email, phone, harga, paymentMethod, result.data.checkout_url]
+      [transactionId, finalMerchantRef, name, email, formattedPhone, amount, paymentMethod, result.data.checkout_url]
     );
 
     return res.json({
       success: true,
       data: {
         checkout_url: result.data.checkout_url,
-        transaction_id: transactionId
+        transaction_id: transactionId,
+        merchant_ref: finalMerchantRef
       }
     });
 
@@ -232,7 +327,7 @@ app.post('/api/bayar-rank', async (req, res) => {
     console.error(`[${transactionId}] Error:`, error);
     return res.status(500).json({
       success: false,
-      message: error.message || 'Terjadi kesalahan server'
+      message: 'Terjadi kesalahan server'
     });
   }
 });
@@ -361,7 +456,11 @@ process.on('uncaughtException', err => {
 });
 
 // Start Server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`Webstore berjalan di http://localhost:${PORT}`);
+db.connect().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+    console.log(`Webstore berjalan di http://localhost:${PORT}`);
+  });
+}).catch(err => {
+  console.error('Failed to start server:', err);
 });
