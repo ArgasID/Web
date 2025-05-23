@@ -29,18 +29,21 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 });
 
-// Tambahkan di bagian atas file
+// Konfigurasi Tripay
 const configTripay = {
     kodeMerchant: 'T40499',
-    privateKey: 'WN7qd-YWXNB-B3Z43-Je36m-uKTGG'
+    privateKey: 'WN7qd-YWXNB-B3Z43-Je36m-uKTGG',
+    apiKey: 'PCYJ6jKIFZgmMlF26cm5SDLBmbeR678VuBzrZqIF' // Tambahkan API key yang sesuai
 };
 
-// Fungsi untuk generate signature
+// Fungsi untuk generate signature (menggunakan CryptoJS)
 function generateSignature(merchant_ref, amount) {
-    const crypto = require('crypto');
-    const signature = crypto.createHmac('sha256', configTripay.privateKey)
-        .update(configTripay.kodeMerchant + merchant_ref + amount)
-        .digest('hex');
+    // Pastikan Anda telah memuat library CryptoJS di HTML Anda
+    // <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    const signature = CryptoJS.HmacSHA256(
+        configTripay.kodeMerchant + merchant_ref + amount,
+        configTripay.privateKey
+    ).toString(CryptoJS.enc.Hex);
     return signature;
 }
 
@@ -55,13 +58,25 @@ async function prosesPembayaran(rank, harga) {
     const phone = document.getElementById('phone').value.trim();
     const paymentMethod = document.getElementById('payment-method').value;
 
-    // Validasi form (tetap sama seperti sebelumnya)
+    // Validasi form
     if (!name || !email || !phone || !paymentMethod) {
         alert("Semua field harus diisi!");
         return;
     }
 
-    // Validasi email dan nomor HP (tetap sama)
+    // Validasi email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        alert("Format email tidak valid!");
+        return;
+    }
+
+    // Validasi nomor HP
+    const phoneRegex = /^[0-9]{10,13}$/;
+    if (!phoneRegex.test(phone)) {
+        alert("Format nomor HP tidak valid!");
+        return;
+    }
 
     try {
         const merchant_ref = generateMerchantRef();
@@ -108,6 +123,6 @@ async function prosesPembayaran(rank, harga) {
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Terjadi kesalahan saat memproses pembayaran', error);
+        alert('Terjadi kesalahan saat memproses pembayaran');
     }
 }
