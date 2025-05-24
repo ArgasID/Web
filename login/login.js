@@ -125,18 +125,21 @@ async function processLogin(usernameInput, javaOption, loginError) {
   const finalUsername = isJava ? usernameRaw : `.${usernameRaw}`;
 
   try {
-    const response = await fetch("/check-username", {
+    const response = await fetch("/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username: finalUsername })
+      body: JSON.stringify({ 
+        username: finalUsername,
+        platform: isJava ? "java" : "bedrock" 
+      })
     });
 
     const data = await response.json();
 
-    if (response.ok && data.exists) {
+    if (response.ok && data.success) {
       handleLoginSuccess(finalUsername, isJava ? "java" : "bedrock");
     } else {
-      loginError.textContent = "Username tidak ditemukan.";
+      loginError.textContent = data.message || "Username tidak ditemukan.";
     }
   } catch (err) {
     loginError.textContent = "Gagal menghubungi server.";
@@ -145,10 +148,11 @@ async function processLogin(usernameInput, javaOption, loginError) {
 }
 
 function handleLoginSuccess(username, platform) {
+  // Simpan data di localStorage
   localStorage.setItem("username", username);
   localStorage.setItem("platform", platform);
   
-  // Check for pending redirect or purchase
+  // Redirect
   const urlParams = new URLSearchParams(window.location.search);
   const redirectUrl = urlParams.get('redirect') || '/';
   window.location.href = redirectUrl;

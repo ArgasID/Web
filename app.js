@@ -1,4 +1,5 @@
 require('./config');
+const session = require('express-session');
 const express = require('express');
 const mysql = require('mysql2/promise');
 const crypto = require('crypto');
@@ -11,6 +12,23 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(__dirname));
 app.use(express.urlencoded({ extended: true }));
+app.use(session({
+  secret: 'bsfsgrsety',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false }
+}));
+
+// Middleware untuk mengecek auth
+function requireAuth(req, res, next) {
+  if (!req.session.username) {
+    return res.status(401).json({
+      success: false,
+      message: 'Anda harus login terlebih dahulu'
+    });
+  }
+  next();
+}
 
 // Enable CORS
 app.use((req, res, next) => {
@@ -113,7 +131,8 @@ app.post('/check-username', async (req, res) => {
 // Login System
 app.post('/login', async (req, res) => {
   try {
-    const { username } = req.body;
+    const { username, platform } = req.body;
+    
     if (!username) {
       return res.status(400).json({ 
         success: false, 
@@ -121,12 +140,21 @@ app.post('/login', async (req, res) => {
       });
     }
 
+    // Cek username di database
     const rows = await db.query('SELECT * FROM players WHERE name = ?', [username]);
     
     if (rows.length > 0) {
-      res.json({ success: true });
-    } else {
+      // Set session
+      req.session.username = username;
+      req.session.platform = platform;
+      
       res.json({ 
+        success: true,
+        username: username,
+        platform: platform
+      });
+    } else {
+      res.status(404).json({ 
         success: false, 
         message: 'Username tidak ditemukan.' 
       });
@@ -200,12 +228,12 @@ const tripayConfig = {
 };
 
 // Endpoint pembayaran
-app.post('/api/bayar-rank', async (req, res) => {
+app.post('/api/bayar-rank', requireAuth, async (req, res) => {
   const transactionId = `TRX-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
   
   try {
     const { rank, harga, name, email, phone, paymentMethod } = req.body;
-    const username = req.session.username || req.body.username; // Ambil dari session atau body
+    const username = req.session.username; // Ambil dari session atau body
 
     // Input validation
     if (!rank || !harga || !name || !email || !phone || !paymentMethod) {
