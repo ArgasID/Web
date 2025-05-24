@@ -331,9 +331,6 @@ app.post('/api/bayar-rank', requireAuth, async (req, res) => {
         transaction_id: transactionId
       }
     });
-    
-    localStorage.setItem('last_transaction', result.data.transaction_id);
-    window.location.href = '/status-payment/index.html';
 
   } catch (error) {
     console.error('Payment error:', error);
