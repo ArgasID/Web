@@ -493,57 +493,74 @@ app.post('/callback', async (req, res) => {
 });
 
 // Payment Return Handler
-app.get('/redirect', async (req, res) => {
+app.get('/redirect', (req, res) => {
   try {
-    const { status, reference } = req.query;
-    
-    // Validasi parameter
-    if (!status || !reference) {
-      return res.redirect('/status-payment/?status=invalid&reference=null');
-    }
-
-    // Redirect ke halaman status dengan parameter URL
-    res.redirect(`/status-payment/?status=${status}&reference=${reference}`);
-
+    res.redirect('/status-payment/');
   } catch (error) {
-    console.error('Redirect error:', error);
-    res.redirect('/status-payment/?status=error');
+    console.error('Error saat redirect:', error);
+    res.redirect('/status-payment/');
   }
 });
 
 // Endpoint untuk mendapatkan status transaksi
-app.get('/api/check-transaction/:transactionId', async (req, res) => {
+app.get('/api/check-transaction', async (req, res) => {
   try {
-    const { transactionId } = req.params;
+    // Ambil transaction_id dari query parameter
+    const { transaction_id } = req.query;
     
-    // Cari transaksi di database
-    const [transaction] = await db.query(
-      `SELECT status, checkout_url 
-       FROM transactions 
-       WHERE transaction_id = ?`,
-      [transactionId]
-    );
-
-    if (!transaction) {
-      return res.status(404).json({ 
+    if (!transaction_id) {
+      return res.status(400).json({ 
         success: false,
-        message: 'Transaksi tidak ditemukan'
+        message: 'Parameter transaction_id diperlukan'
       });
     }
 
+    // Cari transaksi di database
+    const [transaksi] = await db.query(
+      `SELECT 
+        status, 
+        checkout_url,
+        username,
+        rank,
+        amount,
+        payment_method,
+        created_at
+       FROM transactions 
+       WHERE transaction_id = ?`,
+      [transaction_id]
+    );
+
+    if (!transaksi) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Transaksi tidak ditemukan di database'
+      });
+    }
+
+    // Format data untuk response
+    const dataResponse = {
+      status: transaksi.status,
+      checkout_url: transaksi.checkout_url,
+      detail: {
+        username: transaksi.username,
+        rank: transaksi.rank,
+        jumlah: transaksi.amount,
+        metode_pembayaran: transaksi.payment_method,
+        tanggal: transaksi.created_at
+      }
+    };
+
     res.json({
       success: true,
-      data: {
-        status: transaction.status,
-        checkout_url: transaction.checkout_url
-      }
+      message: 'Data transaksi berhasil ditemukan',
+      data: dataResponse
     });
 
   } catch (error) {
-    console.error('Error checking transaction:', error);
+    console.error('Error saat memeriksa transaksi:', error);
     res.status(500).json({ 
       success: false,
-      message: 'Server error'
+      message: 'Terjadi kesalahan server saat memproses permintaan'
     });
   }
 });
