@@ -3,51 +3,52 @@ body {
   font-family: 'Arial', sans-serif;
   background-color: #f5f7fa;
   margin: 0;
-  padding: 0;
+  padding: 20px;
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.container-pembayaran {
+.kontainer-pembayaran {
   width: 100%;
-  max-width: 600px;
-  margin: 2rem auto;
-  padding: 2rem;
+  max-width: 500px;
   background-color: white;
   border-radius: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  text-align: center;
 }
 
 .icon-status {
-  font-size: 5rem;
-  margin-bottom: 1.5rem;
-  text-align: center;
+  font-size: 60px;
+  margin-bottom: 20px;
+  line-height: 1;
 }
 
 .judul-status {
   color: #2c3e50;
-  text-align: center;
-  margin-bottom: 1rem;
+  font-size: 24px;
+  margin-bottom: 15px;
 }
 
 .pesan-status {
   color: #7f8c8d;
-  text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 25px;
+  line-height: 1.5;
 }
 
 .detail-transaksi {
   background-color: #f8f9fa;
   border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
+  padding: 20px;
+  margin-bottom: 25px;
+  text-align: left;
 }
 
 .baris-detail {
   display: flex;
-  margin-bottom: 0.8rem;
+  margin-bottom: 10px;
 }
 
 .label-detail {
@@ -56,57 +57,46 @@ body {
   color: #34495e;
 }
 
-.tombol-container {
+.kontainer-tombol {
   display: flex;
+  gap: 15px;
   justify-content: center;
-  gap: 1rem;
   flex-wrap: wrap;
 }
 
 .tombol {
-  padding: 0.8rem 1.5rem;
+  padding: 12px 20px;
   border-radius: 6px;
   text-decoration: none;
   font-weight: bold;
-  transition: all 0.3s ease;
+  transition: all 0.3s;
+  display: inline-block;
   text-align: center;
-  min-width: 200px;
+  flex: 1;
+  min-width: 180px;
+  box-sizing: border-box;
 }
 
 .tombol-primer {
   background-color: #3498db;
   color: white;
+  border: 2px solid #3498db;
 }
 
 .tombol-primer:hover {
   background-color: #2980b9;
+  border-color: #2980b9;
 }
 
 .tombol-sekunder {
-  background-color: #95a5a6;
-  color: white;
+  background-color: white;
+  color: #7f8c8d;
+  border: 2px solid #bdc3c7;
 }
 
 .tombol-sekunder:hover {
-  background-color: #7f8c8d;
-}
-
-.tombol-sukses {
-  background-color: #2ecc71;
-  color: white;
-}
-
-.tombol-sukses:hover {
-  background-color: #27ae60;
-}
-
-.tombol-gagal {
-  background-color: #e74c3c;
-  color: white;
-}
-
-.tombol-gagal:hover {
-  background-color: #c0392b;
+  background-color: #f8f9fa;
+  border-color: #95a5a6;
 }
 
 /* Warna status */
@@ -114,3 +104,4 @@ body {
 .status-pending { color: #f39c12; }
 .status-gagal { color: #e74c3c; }
 .status-kadaluarsa { color: #e74c3c; }
+.status-loading { color: #3498db; }
