@@ -72,22 +72,24 @@ const db = {
       `);
 
       await this.conn.execute(`
-        CREATE TABLE IF NOT EXISTS transactions (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          transaction_id VARCHAR(50) NOT NULL,
-          merchant_ref VARCHAR(50) NOT NULL,
-          customer_name VARCHAR(100) NOT NULL,
-          email VARCHAR(100) NOT NULL,
-          phone VARCHAR(20) NOT NULL,
-          amount INT NOT NULL,
-          status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-          payment_method VARCHAR(50) NOT NULL,
-          checkout_url TEXT NOT NULL,
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          UNIQUE(transaction_id),
-          UNIQUE(merchant_ref)
-        )
-      `);
+      CREATE TABLE IF NOT EXISTS transactions (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        transaction_id VARCHAR(50) NOT NULL,
+        merchant_ref VARCHAR(50) NOT NULL,
+        customer_name VARCHAR(100) NOT NULL,
+        email VARCHAR(100) NOT NULL,
+        phone VARCHAR(20) NOT NULL,
+        amount INT NOT NULL,
+        status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+        payment_method VARCHAR(50) NOT NULL,
+        checkout_url TEXT NOT NULL,
+        username VARCHAR(50) NOT NULL,  // Kolom baru
+        rank VARCHAR(50) NOT NULL,      // Kolom baru
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(transaction_id),
+        UNIQUE(merchant_ref)
+      )
+    `);
 
       await this.conn.execute(`
         CREATE TABLE IF NOT EXISTS transaction_errors (
