@@ -331,6 +331,9 @@ app.post('/api/bayar-rank', requireAuth, async (req, res) => {
         transaction_id: transactionId
       }
     });
+    
+    localStorage.setItem('last_transaction', result.data.transaction_id);
+    window.location.href = '/status-payment/index.html';
 
   } catch (error) {
     console.error('Payment error:', error);
@@ -508,6 +511,43 @@ app.get('/redirect', async (req, res) => {
   } catch (error) {
     console.error('Redirect error:', error);
     res.redirect('/status-payment/?status=error');
+  }
+});
+
+// Endpoint untuk mendapatkan status transaksi
+app.get('/api/check-transaction/:transactionId', async (req, res) => {
+  try {
+    const { transactionId } = req.params;
+    
+    // Cari transaksi di database
+    const [transaction] = await db.query(
+      `SELECT status, checkout_url 
+       FROM transactions 
+       WHERE transaction_id = ?`,
+      [transactionId]
+    );
+
+    if (!transaction) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Transaksi tidak ditemukan'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        status: transaction.status,
+        checkout_url: transaction.checkout_url
+      }
+    });
+
+  } catch (error) {
+    console.error('Error checking transaction:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Server error'
+    });
   }
 });
 

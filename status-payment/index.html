@@ -4,86 +4,60 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Status Pembayaran</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f5f5f5;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .payment-container {
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      padding: 2rem;
-      text-align: center;
-      max-width: 500px;
-      width: 90%;
-    }
-    .status-icon {
-      font-size: 5rem;
-      margin-bottom: 1rem;
-    }
-    .success { color: #4CAF50; }
-    .pending { color: #FFC107; }
-    .failed { color: #F44336; }
-    .btn {
-      display: inline-block;
-      padding: 10px 20px;
-      margin: 10px;
-      border-radius: 5px;
-      text-decoration: none;
-      font-weight: bold;
-      transition: all 0.3s;
-    }
-    .btn-primary {
-      background-color: #4CAF50;
-      color: white;
-    }
-    .btn-secondary {
-      background-color: #2196F3;
-      color: white;
-    }
-    .btn-danger {
-      background-color: #f44336;
-      color: white;
-    }
-  </style>
+  <link rel="stylesheet" href="status-payment.css">
 </head>
 <body>
   <div class="payment-container">
     <div id="status-icon" class="status-icon">⌛</div>
-    <h1 id="status-title">Memproses Status Pembayaran</h1>
-    <p id="status-message">Mohon tunggu sebentar...</p>
-    <div id="button-container">
-      <!-- Tombol akan dimuat via JavaScript -->
-    </div>
+    <h1 id="status-title">Memeriksa Status Pembayaran</h1>
+    <p id="status-message">Mohon tunggu...</p>
+    <div id="button-container"></div>
   </div>
 
   <script>
-    // Ambil parameter URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const status = urlParams.get('status');
-    const reference = urlParams.get('reference');
+    document.addEventListener('DOMContentLoaded', async () => {
+      const statusIcon = document.getElementById('status-icon');
+      const statusTitle = document.getElementById('status-title');
+      const statusMessage = document.getElementById('status-message');
+      const buttonContainer = document.getElementById('button-container');
 
-    // Elemen UI
-    const statusIcon = document.getElementById('status-icon');
-    const statusTitle = document.getElementById('status-title');
-    const statusMessage = document.getElementById('status-message');
-    const buttonContainer = document.getElementById('button-container');
+      // Ambil transactionId dari localStorage
+      const transactionId = localStorage.getItem('last_transaction');
+      
+      if (!transactionId) {
+        showError('Transaksi tidak ditemukan');
+        return;
+      }
 
-    // Update tampilan berdasarkan status
-    function renderStatus() {
+      try {
+        // Cek status ke backend
+        const response = await fetch(`/api/check-transaction/${transactionId}`);
+        const result = await response.json();
+
+        if (!result.success) {
+          showError(result.message || 'Gagal memeriksa status');
+          return;
+        }
+
+        const { status, checkout_url } = result.data;
+
+        // Update UI berdasarkan status
+        updateUI(status, checkout_url, transactionId);
+
+      } catch (error) {
+        console.error('Error:', error);
+        showError('Terjadi kesalahan jaringan');
+      }
+    });
+
+    function updateUI(status, checkoutUrl, transactionId) {
       let icon, title, message, buttons;
 
       switch(status) {
         case 'PAID':
           icon = '✓';
           title = 'Pembayaran Berhasil!';
-          message = `Terima kasih telah membeli. Referensi: ${reference}`;
+          message = `Terima kasih. ID Transaksi: ${transactionId}`;
           buttons = `
             <a href="/" class="btn btn-primary">Kembali Ke Beranda</a>
           `;
@@ -92,9 +66,9 @@
         case 'PENDING':
           icon = '⌛';
           title = 'Menunggu Pembayaran';
-          message = `Silakan selesaikan pembayaran Anda. Referensi: ${reference}`;
+          message = `Silakan selesaikan pembayaran. ID: ${transactionId}`;
           buttons = `
-            <a href="#" id="continue-payment" class="btn btn-primary">Lanjutkan Pembayaran</a>
+            <a href="${checkoutUrl}" class="btn btn-primary">Lanjutkan Pembayaran</a>
             <a href="/" class="btn btn-secondary">Kembali Ke Beranda</a>
           `;
           break;
@@ -103,7 +77,7 @@
         case 'FAILED':
           icon = '✗';
           title = status === 'EXPIRED' ? 'Pembayaran Kadaluarsa' : 'Pembayaran Gagal';
-          message = `Silakan coba lagi. Referensi: ${reference}`;
+          message = `ID Transaksi: ${transactionId}`;
           buttons = `
             <a href="/" class="btn btn-danger">Kembali Ke Beranda</a>
           `;
@@ -112,7 +86,7 @@
         default:
           icon = '❓';
           title = 'Status Tidak Dikenali';
-          message = 'Terjadi kesalahan dalam memproses pembayaran';
+          message = `Status: ${status || 'unknown'}`;
           buttons = `
             <a href="/" class="btn btn-secondary">Kembali Ke Beranda</a>
           `;
@@ -123,23 +97,17 @@
       statusTitle.textContent = title;
       statusMessage.textContent = message;
       buttonContainer.innerHTML = buttons;
-
-      // Tambahkan event listener untuk tombol lanjutkan pembayaran
-      if (status === 'PENDING') {
-        document.getElementById('continue-payment').addEventListener('click', () => {
-          // Ambil URL pembayaran dari API atau localStorage
-          const paymentUrl = localStorage.getItem('last_payment_url');
-          if (paymentUrl) {
-            window.location.href = paymentUrl;
-          } else {
-            alert('URL pembayaran tidak ditemukan');
-          }
-        });
-      }
     }
 
-    // Jalankan saat halaman dimuat
-    document.addEventListener('DOMContentLoaded', renderStatus);
+    function showError(message) {
+      statusIcon.innerHTML = '❌';
+      statusIcon.className = 'status-icon failed';
+      statusTitle.textContent = 'Error';
+      statusMessage.textContent = message;
+      buttonContainer.innerHTML = `
+        <a href="/" class="btn btn-danger">Kembali Ke Beranda</a>
+      `;
+    }
   </script>
 </body>
 </html>
