@@ -96,16 +96,6 @@ db.connect().catch(err => {
   process.exit(1);
 });
 
-// Tripay Payment Configuration
-const tripayConfig = {
-  kodeMerchant: 'T40499',
-  privateKey: 'WN7qd-YWXNB-B3Z43-Je36m-uKTGG',
-  apiKey: 'PCYJ6jKIFZgmMlF26cm5SDLBmbeR678VuBzrZqIF',
-  baseUrl: 'https://tripay.co.id/api',
-  callbackUrl: 'https://web.glowbit.fun/callback',
-  returnUrl: 'https://web.glowbit.fun/redirect'
-};
-
 // Username Check
 app.post('/check-username', async (req, res) => {
   try {
@@ -198,6 +188,16 @@ app.post('/buy', async (req, res) => {
     });
   }
 });
+
+// Tripay Payment Configuration
+const tripayConfig = {
+  kodeMerchant: 'T40499',
+  privateKey: 'WN7qd-YWXNB-B3Z43-Je36m-uKTGG',
+  apiKey: 'PCYJ6jKIFZgmMlF26cm5SDLBmbeR678VuBzrZqIF',
+  baseUrl: 'https://tripay.co.id/api',
+  callbackUrl: 'https://web.glowbit.fun/callback',
+  returnUrl: 'https://web.glowbit.fun/redirect'
+};
 
 // Endpoint pembayaran
 app.post('/api/bayar-rank', async (req, res) => {
@@ -342,10 +342,10 @@ app.post('/callback', async (req, res) => {
       return res.status(400).send('Invalid Event Type');
     }
 
-    // 5. Validasi data transaksi
-    const { reference, status, merchant_ref, amount } = jsonData;
-    if (!reference || !status || !merchant_ref || !amount) {
-      console.error(`[${callbackId}] Missing transaction data`);
+    // 5. Validasi data transaksi - Diperbarui untuk menyesuaikan dengan format Tripay
+    const { reference, status, merchant_ref, total_amount } = jsonData;
+    if (!reference || !status || !merchant_ref || total_amount === undefined) {
+      console.error(`[${callbackId}] Missing transaction data`, jsonData);
       return res.status(400).send('Incomplete Transaction Data');
     }
 
@@ -359,29 +359,35 @@ app.post('/callback', async (req, res) => {
       reference,
       status,
       merchant_ref,
-      amount,
-      event: callbackEvent
+      total_amount,
+      event: callbackEvent,
+      ...jsonData // Menyimpan semua data tambahan dari Tripay
     };
 
     // 7. Simpan log berdasarkan status
+    const logDir = 'payment_logs';
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir);
+    }
+
     switch (status) {
       case 'PAID':
-        fs.appendFileSync('paid_payments.log', JSON.stringify(logData) + '\n');
+        fs.appendFileSync(`${logDir}/paid_payments.log`, JSON.stringify(logData) + '\n');
         console.log(`[${callbackId}] Payment SUCCESS: ${reference}`);
         break;
 
       case 'FAILED':
-        fs.appendFileSync('failed_payments.log', JSON.stringify(logData) + '\n');
+        fs.appendFileSync(`${logDir}/failed_payments.log`, JSON.stringify(logData) + '\n');
         console.warn(`[${callbackId}] Payment FAILED: ${reference}`);
         break;
 
       case 'EXPIRED':
-        fs.appendFileSync('expired_payments.log', JSON.stringify(logData) + '\n');
+        fs.appendFileSync(`${logDir}/expired_payments.log`, JSON.stringify(logData) + '\n');
         console.warn(`[${callbackId}] Payment EXPIRED: ${reference}`);
         break;
 
       default:
-        fs.appendFileSync('unknown_payments.log', JSON.stringify(logData) + '\n');
+        fs.appendFileSync(`${logDir}/unknown_payments.log`, JSON.stringify(logData) + '\n');
         console.error(`[${callbackId}] Unknown status: ${status}`);
     }
 
@@ -389,7 +395,7 @@ app.post('/callback', async (req, res) => {
     res.status(200).json({
       success: true,
       callback_id: callbackId,
-      message: 'Callback processed'
+      message: 'Callback processed successfully'
     });
 
   } catch (error) {
@@ -398,6 +404,7 @@ app.post('/callback', async (req, res) => {
     // Tetap return 200 untuk mencegah retry berulang dari Tripay
     res.status(200).json({
       success: false,
+      callback_id: callbackId,
       error: 'Processing error but callback accepted'
     });
   }
