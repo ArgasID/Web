@@ -1,107 +1,161 @@
-/* Gaya dasar untuk halaman status pembayaran */
-body {
-  font-family: 'Arial', sans-serif;
-  background-color: #f5f7fa;
-  margin: 0;
-  padding: 20px;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+// Fungsi utama yang dijalankan saat halaman siap
+document.addEventListener('DOMContentLoaded', async () => {
+  console.log('Memulai pemeriksaan status pembayaran...');
+  
+  try {
+    // Ambil transactionId dari localStorage
+    const transactionId = localStorage.getItem('last_transaction');
+    console.log('ID Transaksi dari localStorage:', transactionId);
+    
+    if (!transactionId) {
+      throw new Error('Tidak ada data transaksi terakhir di localStorage');
+    }
+
+    // Tampilkan status loading
+    perbaruiTampilan('loading', 'Memeriksa status pembayaran...');
+    
+    // Cek status ke backend
+    const response = await fetch(`/api/check-transaction?transaction_id=${encodeURIComponent(transactionId)}`);
+    
+    if (!response.ok) {
+      throw new Error(`Error HTTP! Status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+      throw new Error(result.message || 'Gagal memeriksa status transaksi');
+    }
+
+    // Tampilkan detail transaksi
+    tampilkanDetailTransaksi(transactionId, result.data);
+    
+    // Perbarui UI berdasarkan status
+    perbaruiTampilan(result.data.status, result.data.checkout_url, transactionId);
+
+  } catch (error) {
+    console.error('Terjadi kesalahan:', error);
+    tampilkanError(error.message || 'Terjadi kesalahan saat memeriksa status pembayaran');
+  }
+});
+
+// Fungsi untuk menampilkan detail transaksi
+function tampilkanDetailTransaksi(transactionId, dataTransaksi) {
+  const detailElement = document.getElementById('transaction-details');
+  
+  document.getElementById('transaction-id').textContent = transactionId;
+  document.getElementById('transaction-username').textContent = dataTransaksi.detail.username;
+  document.getElementById('transaction-rank').textContent = dataTransaksi.detail.rank;
+  document.getElementById('transaction-amount').textContent = formatRupiah(dataTransaksi.detail.jumlah);
+  document.getElementById('transaction-method').textContent = dataTransaksi.detail.metode_pembayaran;
+  document.getElementById('transaction-date').textContent = formatTanggal(dataTransaksi.detail.tanggal);
+  
+  detailElement.style.display = 'block';
 }
 
-.kontainer-pembayaran {
-  width: 100%;
-  max-width: 500px;
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 30px;
-  text-align: center;
+// Fungsi untuk memperbarui tampilan berdasarkan status
+function perbaruiTampilan(status, checkoutUrl, transactionId) {
+  const element = {
+    icon: document.getElementById('status-icon'),
+    judul: document.getElementById('status-title'),
+    pesan: document.getElementById('status-message'),
+    tombol: document.getElementById('button-container')
+  };
+
+  const tampilan = {
+    loading: {
+      icon: '⏳',
+      judul: 'Memeriksa Status Pembayaran',
+      pesan: 'Mohon tunggu sebentar...',
+      tombol: ''
+    },
+    PAID: {
+      icon: '✓',
+      judul: 'Pembayaran Berhasil!',
+      pesan: 'Terima kasih! Pembayaran Anda telah berhasil diproses.',
+      tombol: `<a href="/" class="tombol tombol-primer">Kembali ke Beranda</a>`
+    },
+    PENDING: {
+      icon: '⌛',
+      judul: 'Menunggu Pembayaran',
+      pesan: 'Silakan selesaikan pembayaran Anda untuk mengaktifkan rank.',
+      tombol: `
+        <a href="${checkoutUrl}" class="tombol tombol-primer" target="_blank">Lanjutkan Pembayaran</a>
+        <a href="/" class="tombol tombol-sekunder">Kembali ke Beranda</a>
+      `
+    },
+    EXPIRED: {
+      icon: '✗',
+      judul: 'Pembayaran Kadaluarsa',
+      pesan: 'Waktu pembayaran Anda telah habis. Silakan lakukan transaksi baru.',
+      tombol: `
+        <a href="/beli-rank" class="tombol tombol-primer">Beli Rank Baru</a>
+        <a href="/" class="tombol tombol-sekunder">Kembali ke Beranda</a>
+      `
+    },
+    FAILED: {
+      icon: '✗',
+      judul: 'Pembayaran Gagal',
+      pesan: 'Pembayaran Anda gagal diproses. Silakan coba lagi.',
+      tombol: `
+        <a href="${checkoutUrl}" class="tombol tombol-primer" target="_blank">Coba Bayar Lagi</a>
+        <a href="/" class="tombol tombol-sekunder">Kembali ke Beranda</a>
+      `
+    },
+    default: {
+      icon: '❓',
+      judul: 'Status Tidak Dikenali',
+      pesan: `Status: ${status || 'tidak diketahui'}`,
+      tombol: `<a href="/" class="tombol tombol-sekunder">Kembali ke Beranda</a>`
+    }
+  };
+
+  const tampilanStatus = tampilan[status] || tampilan.default;
+  
+  element.icon.innerHTML = tampilanStatus.icon;
+  element.icon.className = `icon-status status-${status.toLowerCase()}`;
+  element.judul.textContent = tampilanStatus.judul;
+  element.pesan.textContent = tampilanStatus.pesan;
+  element.tombol.innerHTML = tampilanStatus.tombol;
 }
 
-.icon-status {
-  font-size: 60px;
-  margin-bottom: 20px;
-  line-height: 1;
+// Fungsi untuk menampilkan error
+function tampilkanError(pesanError) {
+  const element = {
+    icon: document.getElementById('status-icon'),
+    judul: document.getElementById('status-title'),
+    pesan: document.getElementById('status-message'),
+    tombol: document.getElementById('button-container'),
+    detail: document.getElementById('transaction-details')
+  };
+
+  element.icon.innerHTML = '❌';
+  element.icon.className = 'icon-status status-gagal';
+  element.judul.textContent = 'Terjadi Kesalahan';
+  element.pesan.textContent = pesanError;
+  element.tombol.innerHTML = `
+    <a href="/" class="tombol tombol-primer">Kembali ke Beranda</a>
+    <a href="/kontak" class="tombol tombol-sekunder">Hubungi Admin</a>
+  `;
+  element.detail.style.display = 'none';
 }
 
-.judul-status {
-  color: #2c3e50;
-  font-size: 24px;
-  margin-bottom: 15px;
+// Fungsi pembantu untuk format Rupiah
+function formatRupiah(jumlah) {
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR'
+  }).format(jumlah);
 }
 
-.pesan-status {
-  color: #7f8c8d;
-  margin-bottom: 25px;
-  line-height: 1.5;
+// Fungsi pembantu untuk format tanggal
+function formatTanggal(tanggal) {
+  return new Date(tanggal).toLocaleString('id-ID', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 }
-
-.detail-transaksi {
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 25px;
-  text-align: left;
-}
-
-.baris-detail {
-  display: flex;
-  margin-bottom: 10px;
-}
-
-.label-detail {
-  font-weight: bold;
-  width: 150px;
-  color: #34495e;
-}
-
-.kontainer-tombol {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.tombol {
-  padding: 12px 20px;
-  border-radius: 6px;
-  text-decoration: none;
-  font-weight: bold;
-  transition: all 0.3s;
-  display: inline-block;
-  text-align: center;
-  flex: 1;
-  min-width: 180px;
-  box-sizing: border-box;
-}
-
-.tombol-primer {
-  background-color: #3498db;
-  color: white;
-  border: 2px solid #3498db;
-}
-
-.tombol-primer:hover {
-  background-color: #2980b9;
-  border-color: #2980b9;
-}
-
-.tombol-sekunder {
-  background-color: white;
-  color: #7f8c8d;
-  border: 2px solid #bdc3c7;
-}
-
-.tombol-sekunder:hover {
-  background-color: #f8f9fa;
-  border-color: #95a5a6;
-}
-
-/* Warna status */
-.status-sukses { color: #2ecc71; }
-.status-pending { color: #f39c12; }
-.status-gagal { color: #e74c3c; }
-.status-kadaluarsa { color: #e74c3c; }
-.status-loading { color: #3498db; }
