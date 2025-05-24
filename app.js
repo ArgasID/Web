@@ -286,7 +286,8 @@ app.post('/api/bayar-rank', requireAuth, async (req, res) => {
       customer_phone: phone.startsWith('0') ? '62' + phone.slice(1) : phone,
       order_items: [{
         name: formatRankName(rank),
-        price: amount
+        price: amount,
+        quantity: 1
       }],
       callback_url: tripayConfig.callbackUrl,
       return_url: tripayConfig.returnUrl,
