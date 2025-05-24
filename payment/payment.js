@@ -1,5 +1,13 @@
 document.addEventListener("DOMContentLoaded", function() {
   try {
+    // Ambil data user dari localStorage (setelah login)
+    const username = localStorage.getItem("username");
+    const platform = localStorage.getItem("platform");
+    
+    if (!username) {
+      throw new Error("Anda harus login terlebih dahulu");
+    }
+
     // Ambil parameter dari URL
     const urlParams = new URLSearchParams(window.location.search);
     const rank = urlParams.get('rank');
@@ -7,6 +15,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const numericHarga = parseInt(harga) || 0;
 
     if (rank && numericHarga > 0) {
+      // Tampilkan data pembelian
       document.getElementById("rank-name").textContent = rank.toUpperCase();
       document.getElementById("rank-price").textContent = formatRupiah(numericHarga);
       
@@ -18,7 +27,7 @@ document.addEventListener("DOMContentLoaded", function() {
       // Proses pembayaran saat form submit
       document.getElementById('payment-form').addEventListener('submit', function(e) {
         e.preventDefault();
-        prosesPembayaran(rank, numericHarga);
+        prosesPembayaran(rank, numericHarga, username, platform);
       });
     } else {
       throw new Error("Data pembelian tidak valid");
@@ -31,35 +40,23 @@ document.addEventListener("DOMContentLoaded", function() {
 
     // Fungsi untuk format input nomor telepon
     function formatPhoneInput(phone) {
-      // Hapus semua karakter non-angka
       let cleaned = phone.replace(/\D/g, '');
-      
-      // Konversi +62 atau 62 menjadi 0
       if (cleaned.startsWith('62')) {
         cleaned = '0' + cleaned.slice(2);
-      }
-      // Pastikan mulai dengan 0
-      else if (!cleaned.startsWith('0') && cleaned.length > 0) {
+      } else if (!cleaned.startsWith('0') && cleaned.length > 0) {
         cleaned = '0' + cleaned;
       }
-      
       return cleaned;
     }
   } catch (error) {
     console.error("Error:", error);
-    alert("Data pembelian tidak valid. Silakan pilih rank kembali.");
-    window.location.href = "/category/ranks/";
+    alert(error.message || "Terjadi kesalahan. Silakan coba lagi.");
+    window.location.href = "/login?redirect=" + encodeURIComponent(window.location.pathname + window.location.search);
   }
 });
 
-// Konfigurasi Tripay
-const configTripay = {
-    kodeMerchant: 'T40499',
-    apiKey: 'PCYJ6jKIFZgmMlF26cm5SDLBmbeR678VuBzrZqIF'
-};
-
 // Fungsi untuk memproses pembayaran
-async function prosesPembayaran(rank, harga) {
+async function prosesPembayaran(rank, harga, username, platform) {
     const name = document.getElementById('name').value.trim();
     const email = document.getElementById('email').value.trim();
     let phone = document.getElementById('phone').value.trim();
@@ -91,7 +88,8 @@ async function prosesPembayaran(rank, harga) {
         const response = await fetch('/api/bayar-rank', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}` // Jika menggunakan JWT
             },
             body: JSON.stringify({
                 rank,
@@ -99,7 +97,8 @@ async function prosesPembayaran(rank, harga) {
                 name,
                 email,
                 phone,
-                paymentMethod
+                paymentMethod,
+                username: platform === 'bedrock' ? `.${username}` : username // Format username sesuai platform
             })
         });
 
@@ -110,6 +109,8 @@ async function prosesPembayaran(rank, harga) {
         }
 
         if (result.success && result.data.checkout_url) {
+            // Simpan transaction ID untuk tracking
+            localStorage.setItem('last_transaction', result.data.transaction_id);
             window.location.href = result.data.checkout_url;
         } else {
             alert(result.message || 'Gagal memproses pembayaran');
@@ -120,24 +121,16 @@ async function prosesPembayaran(rank, harga) {
     }
 }
 
-// Fungsi untuk standarisasi nomor telepon
+// Fungsi untuk standarisasi nomor telepon (sama seperti sebelumnya)
 function formatPhoneNumber(inputPhone) {
-    // Hapus semua karakter non-angka
     let cleaned = inputPhone.replace(/\D/g, '');
-    
-    // Konversi +62 atau 62 menjadi 0
     if (cleaned.startsWith('62')) {
         cleaned = '0' + cleaned.slice(2);
-    } 
-    // Pastikan mulai dengan 0
-    else if (!cleaned.startsWith('0') && cleaned.length > 0) {
+    } else if (!cleaned.startsWith('0') && cleaned.length > 0) {
         cleaned = '0' + cleaned;
     }
-    
-    // Validasi panjang nomor
     if (cleaned.length < 10 || cleaned.length > 13) {
         throw new Error("Nomor telepon harus 10-13 digit (contoh: 081234567890)");
     }
-    
     return cleaned;
 }

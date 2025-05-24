@@ -205,6 +205,7 @@ app.post('/api/bayar-rank', async (req, res) => {
   
   try {
     const { rank, harga, name, email, phone, paymentMethod } = req.body;
+    const username = req.session.username || req.body.username; // Ambil dari session atau body
 
     // Input validation
     if (!rank || !harga || !name || !email || !phone || !paymentMethod) {
@@ -219,6 +220,14 @@ app.post('/api/bayar-rank', async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Jumlah pembayaran tidak valid'
+      });
+    }
+    
+    // Validasi username
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username harus diisi'
       });
     }
 
@@ -270,9 +279,10 @@ app.post('/api/bayar-rank', async (req, res) => {
     // Save transaction
     await db.query(
       `INSERT INTO transactions 
-      (transaction_id, merchant_ref, customer_name, email, phone, amount, status, payment_method, checkout_url)
-      VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?, ?)`,
-      [transactionId, merchant_ref, name, email, phone, amount, paymentMethod, result.data.checkout_url]
+      (transaction_id, merchant_ref, customer_name, email, phone, amount, status, payment_method, checkout_url, username, rank)
+      VALUES (?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, ?)`,
+      [transactionId, merchant_ref, name, email, phone, amount, paymentMethod, 
+       result.data.checkout_url, username, rank]
     );
 
     res.json({
@@ -315,6 +325,7 @@ app.post('/callback', async (req, res) => {
     const callbackSignature = req.headers['x-callback-signature'];
     const callbackEvent = req.headers['x-callback-event'];
     const jsonData = req.body;
+    const { reference, status, merchant_ref } = req.body;
 
     if (!callbackSignature || !callbackEvent) {
       console.error(`[${callbackId}] Missing required headers`);
@@ -369,6 +380,12 @@ app.post('/callback', async (req, res) => {
     if (!fs.existsSync(logDir)) {
       fs.mkdirSync(logDir);
     }
+    
+    // Update status transaksi di database
+    await db.query(
+      "UPDATE transactions SET status = ? WHERE merchant_ref = ?",
+      [status, merchant_ref]
+    );
 
     switch (status) {
       case 'PAID':
@@ -397,6 +414,39 @@ app.post('/callback', async (req, res) => {
       callback_id: callbackId,
       message: 'Callback processed successfully'
     });
+    
+    // Jika pembayaran berhasil, proses rank assignment
+    if (status === 'PAID') {
+      const [transaction] = await db.query(
+        "SELECT username, rank FROM transactions WHERE merchant_ref = ?",
+        [merchant_ref]
+      );
+
+      if (transaction && transaction.username && transaction.rank) {
+        let userIdentifier = transaction.username;
+
+        // Handle Bedrock player (username diawali dengan titik)
+        if (transaction.username.startsWith('.')) {
+          const [player] = await db.query(
+            "SELECT uuid FROM players WHERE name = ?", 
+            [transaction.username]
+          );
+          
+          if (player && player.uuid) {
+            userIdentifier = player.uuid;
+          }
+        }
+
+        // Simpan perintah LuckyPerms
+        const command = `lp user ${userIdentifier} parent set ${transaction.rank}`;
+        await db.query(
+          "INSERT INTO pending_commands (command) VALUES (?)", 
+          [command]
+        );
+
+        console.log(`[${callbackId}] Rank assignment command saved: ${command}`);
+      }
+    }
 
   } catch (error) {
     console.error(`[${callbackId}] Processing error:`, error.stack);
