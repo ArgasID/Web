@@ -252,7 +252,7 @@ app.post('/api/bayar-rank', async (req, res) => {
       }],
       callback_url: tripayConfig.callbackUrl,
       return_url: tripayConfig.returnUrl,
-      expired_time: Math.floor(Date.now() / 1000) + 3600,
+      expired_time: Math.floor(Date.now() / 1000) + 60,
       signature
     };
 
@@ -325,10 +325,9 @@ app.post('/callback', async (req, res) => {
     const callbackSignature = req.headers['x-callback-signature'];
     const callbackEvent = req.headers['x-callback-event'];
     const jsonData = req.body;
-    const { reference, status, merchant_ref } = req.body;
 
     if (!callbackSignature || !callbackEvent) {
-      console.error(`[${callbackId}] Missing required headers`);
+      console.error(`[${callbackId}] Header tidak lengkap`);
       return res.status(400).send('Bad Request');
     }
 
@@ -340,42 +339,26 @@ app.post('/callback', async (req, res) => {
 
     // 3. Verifikasi signature
     if (generatedSignature !== callbackSignature) {
-      console.error(`[${callbackId}] Signature mismatch`, {
-        received: callbackSignature,
-        expected: generatedSignature
-      });
+      console.error(`[${callbackId}] Signature tidak cocok`);
       return res.status(403).send('Forbidden');
     }
 
     // 4. Validasi event type
     if (callbackEvent !== 'payment_status') {
-      console.error(`[${callbackId}] Invalid event type: ${callbackEvent}`);
+      console.error(`[${callbackId}] Event tidak valid: ${callbackEvent}`);
       return res.status(400).send('Invalid Event Type');
     }
 
-    // 5. Validasi data transaksi - Diperbarui untuk menyesuaikan dengan format Tripay
+    // 5. Validasi data transaksi
     const { reference, status, merchant_ref, total_amount } = jsonData;
     if (!reference || !status || !merchant_ref || total_amount === undefined) {
-      console.error(`[${callbackId}] Missing transaction data`, jsonData);
+      console.error(`[${callbackId}] Data transaksi tidak lengkap`, jsonData);
       return res.status(400).send('Incomplete Transaction Data');
     }
 
     // 6. Proses status pembayaran
-    console.log(`[${callbackId}] Processing payment status:`, { reference, status });
+    console.log(`[${callbackId}] Memproses status pembayaran:`, { reference, status });
 
-    const fs = require('fs');
-    const logData = {
-      timestamp: new Date().toISOString(),
-      callback_id: callbackId,
-      reference,
-      status,
-      merchant_ref,
-      total_amount,
-      event: callbackEvent,
-      ...jsonData // Menyimpan semua data tambahan dari Tripay
-    };
-
-    // 7. Simpan log berdasarkan status
     const logDir = 'payment_logs';
     if (!fs.existsSync(logDir)) {
       fs.mkdirSync(logDir);
@@ -387,35 +370,38 @@ app.post('/callback', async (req, res) => {
       [status, merchant_ref]
     );
 
+    // Log data transaksi
+    const logData = {
+      timestamp: new Date().toISOString(),
+      callback_id: callbackId,
+      reference,
+      status,
+      merchant_ref,
+      total_amount,
+      event: callbackEvent,
+      ...jsonData
+    };
+
+    // Simpan log berdasarkan status
     switch (status) {
       case 'PAID':
         fs.appendFileSync(`${logDir}/paid_payments.log`, JSON.stringify(logData) + '\n');
-        console.log(`[${callbackId}] Payment SUCCESS: ${reference}`);
+        console.log(`[${callbackId}] Pembayaran BERHASIL: ${reference}`);
         break;
-
       case 'FAILED':
         fs.appendFileSync(`${logDir}/failed_payments.log`, JSON.stringify(logData) + '\n');
-        console.warn(`[${callbackId}] Payment FAILED: ${reference}`);
+        console.warn(`[${callbackId}] Pembayaran GAGAL: ${reference}`);
         break;
-
       case 'EXPIRED':
         fs.appendFileSync(`${logDir}/expired_payments.log`, JSON.stringify(logData) + '\n');
-        console.warn(`[${callbackId}] Payment EXPIRED: ${reference}`);
+        console.warn(`[${callbackId}] Pembayaran KADALUARSA: ${reference}`);
         break;
-
       default:
         fs.appendFileSync(`${logDir}/unknown_payments.log`, JSON.stringify(logData) + '\n');
-        console.error(`[${callbackId}] Unknown status: ${status}`);
+        console.error(`[${callbackId}] Status tidak dikenal: ${status}`);
     }
 
-    // 8. Beri response ke Tripay
-    res.status(200).json({
-      success: true,
-      callback_id: callbackId,
-      message: 'Callback processed successfully'
-    });
-    
-    // Jika pembayaran berhasil, proses rank assignment
+    // 7. Jika pembayaran berhasil, proses rank assignment
     if (status === 'PAID') {
       const [transaction] = await db.query(
         "SELECT username, rank FROM transactions WHERE merchant_ref = ?",
@@ -444,18 +430,25 @@ app.post('/callback', async (req, res) => {
           [command]
         );
 
-        console.log(`[${callbackId}] Rank assignment command saved: ${command}`);
+        console.log(`[${callbackId}] Perintah rank disimpan: ${command}`);
       }
     }
 
+    // 8. Beri response ke Tripay
+    res.status(200).json({
+      success: true,
+      callback_id: callbackId,
+      message: 'Callback berhasil diproses'
+    });
+
   } catch (error) {
-    console.error(`[${callbackId}] Processing error:`, error.stack);
+    console.error(`[${callbackId}] Error proses callback:`, error);
     
-    // Tetap return 200 untuk mencegah retry berulang dari Tripay
+    // Tetap return 200 untuk mencegah retry dari Tripay
     res.status(200).json({
       success: false,
       callback_id: callbackId,
-      error: 'Processing error but callback accepted'
+      message: 'Error tetapi callback diterima'
     });
   }
 });
