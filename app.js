@@ -497,51 +497,17 @@ app.get('/redirect', async (req, res) => {
   try {
     const { status, reference } = req.query;
     
-    // 1. Validasi parameter
+    // Validasi parameter
     if (!status || !reference) {
-      console.error('Parameter tidak lengkap:', { status, reference });
-      return res.redirect('/failed.html?reason=invalid_request');
+      return res.redirect('/status-payment/?status=invalid&reference=null');
     }
 
-    // 2. Ambil data transaksi dari database
-    const [transaction] = await db.query(
-      "SELECT status, merchant_ref FROM transactions WHERE merchant_ref = ?",
-      [reference]
-    );
-
-    if (!transaction) {
-      console.error('Transaksi tidak ditemukan:', reference);
-      return res.redirect('/failed.html?reason=transaction_not_found');
-    }
-
-    // 3. Definisikan aksi redirect
-    const redirectActions = {
-      PAID: {
-        url: '/success.html',
-        log: `Pembayaran berhasil (Ref: ${reference})`
-      },
-      FAILED: {
-        url: '/failed.html?reason=failed',
-        log: `Pembayaran gagal (Ref: ${reference})`
-      },
-      EXPIRED: {
-        url: '/failed.html?reason=expired',
-        log: `Pembayaran kadaluarsa (Ref: ${reference})`
-      },
-      default: {
-        url: '/failed.html?reason=unknown_status',
-        log: `Status tidak dikenali: ${status} (Ref: ${reference})`
-      }
-    };
-
-    // 4. Log dan redirect
-    const action = redirectActions[status] || redirectActions.default;
-    console.log(action.log);
-    res.redirect(action.url);
+    // Redirect ke halaman status dengan parameter URL
+    res.redirect(`/status-payment/?status=${status}&reference=${reference}`);
 
   } catch (error) {
-    console.error('Error di /redirect:', error);
-    res.redirect('/failed.html?reason=server_error');
+    console.error('Redirect error:', error);
+    res.redirect('/status-payment/?status=error');
   }
 });
 
