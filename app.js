@@ -83,8 +83,8 @@ const db = {
         status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
         payment_method VARCHAR(50) NOT NULL,
         checkout_url TEXT NOT NULL,
-        username VARCHAR(50) NOT NULL,  // Kolom baru
-        rank VARCHAR(50) NOT NULL,      // Kolom baru
+        username VARCHAR(50) NOT NULL,
+        rank VARCHAR(50) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         UNIQUE(transaction_id),
         UNIQUE(merchant_ref)
