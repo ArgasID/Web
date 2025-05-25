@@ -200,7 +200,7 @@
         // Asumsikan data sudah urut dari API
         data.voters.forEach((voter, index) => {
           const li = document.createElement("li");
-          li.innerHTML = `<strong>#${index + 1} ${voter.nickname}</strong>  - ${voter.votes} vote${voter.votes > 1 ? 's' : ''}`;
+          li.innerHTML = `<strong>#${index + 1} ${voter.nickname}</strong>  ${voter.votes} vote${voter.votes > 1 ? 's' : ''}`;
           votersList.appendChild(li);
         });
       } else {
