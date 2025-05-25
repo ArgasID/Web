@@ -129,52 +129,16 @@
   <div class="leaderboard-cards">
     <div class="leaderboard-card" data-scroll>
       <h3><i class="fas fa-crown"></i> Top Donatur</h3>
-      <ol>
-        <li>
-          <span>Player1</span>
-          <span>Rp500.000</span>
-        </li>
-        <li>
-          <span>Player2</span>
-          <span>Rp350.000</span>
-        </li>
-        <li>
-          <span>Player3</span>
-          <span>Rp250.000</span>
-        </li>
-        <li>
-          <span>Player4</span>
-          <span>Rp200.000</span>
-        </li>
-        <li>
-          <span>Player5</span>
-          <span>Rp150.000</span>
-        </li>
+      <ol id="top-donators">
+        <!-- Data akan diisi oleh JavaScript -->
+        <li class="loading">Memuat data donatur...</li>
       </ol>
     </div>
     <div class="leaderboard-card" data-scroll>
       <h3><i class="fas fa-thumbs-up"></i> Top Vote</h3>
-      <ol>
-        <li>
-          <span>PlayerA</span>
-          <span>120 votes</span>
-        </li>
-        <li>
-          <span>PlayerB</span>
-          <span>95 votes</span>
-        </li>
-        <li>
-          <span>PlayerC</span>
-          <span>80 votes</span>
-        </li>
-        <li>
-          <span>PlayerD</span>
-          <span>65 votes</span>
-        </li>
-        <li>
-          <span>PlayerE</span>
-          <span>50 votes</span>
-        </li>
+      <ol id="top-voters">
+        <!-- Data akan diisi oleh JavaScript -->
+        <li class="loading">Memuat data voter...</li>
       </ol>
     </div>
   </div>
@@ -224,5 +188,31 @@
   </footer>
 
   <script src="/asset/script.js"></script>
+<script>
+  async function fetchTopVoters() {
+    try {
+      const response = await fetch('/api/top-voters');
+      const data = await response.json();
+      const votersList = document.getElementById("top-voters");
+      votersList.innerHTML = '';
+
+      if (data.voters && data.voters.length > 0) {
+        // Asumsikan data sudah urut dari API
+        data.voters.forEach((voter, index) => {
+          const li = document.createElement("li");
+          li.innerHTML = `<strong>#${index + 1}</strong> ${voter.nickname} - ${voter.votes} vote${voter.votes > 1 ? 's' : ''}`;
+          votersList.appendChild(li);
+        });
+      } else {
+        votersList.innerHTML = '<li>Tidak ada data vote bulan ini.</li>';
+      }
+    } catch (error) {
+      console.error('Gagal memuat data voters:', error);
+      document.getElementById("top-voters").innerHTML = '<li>Gagal memuat data voters.</li>';
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', fetchTopVoters);
+</script>
 </body>
 </html>

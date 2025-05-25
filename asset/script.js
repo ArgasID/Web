@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
   initServerStatus();
   initInfoButtons();
   initBuyRankButtons();
+  initVoterLeaderboard();
 });
 
 // ==================== MODULES ====================
@@ -374,3 +375,94 @@ function initInfoButtons() {
   });
 }
 
+/**
+ * Voter Leaderboard Module - Mengambil data top voter dari API Minecraft-MP
+ * dengan pembaruan otomatis setiap 1 menit
+ */
+function initVoterLeaderboard() {
+  const topVotersList = document.getElementById('top-voters');
+  const API_KEY = '2hzP0qTnCRhWcmf531gFdqr9BmM5mSiZz8';
+  const API_URL = `https://minecraft-mp.com/api/?object=servers&element=voters&key=${API_KEY}&month=current&format=json`;
+  
+  let voterInterval;
+
+  function fetchVoterData() {
+    console.log('[Voter Leaderboard] Fetching voter data...');
+    
+    // Tampilkan loading state
+    if (topVotersList) {
+      topVotersList.innerHTML = '<li class="loading">Memuat data voter...</li>';
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    fetch(API_URL, { signal: controller.signal })
+      .then(response => {
+        clearTimeout(timeoutId);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return response.json();
+      })
+      .then(data => {
+        // Validasi data
+        if (!data?.voters || !Array.isArray(data.voters)) {
+          throw new Error('Invalid voters data format');
+        }
+
+        // Proses data voters
+        const processedVoters = data.voters.map(voter => ({
+          nickname: voter.nickname || 'Unknown',
+          votes: parseInt(voter.votes) || 0
+        })).sort((a, b) => b.votes - a.votes);
+
+        // Update DOM
+        if (topVotersList) {
+          if (processedVoters.length === 0) {
+            topVotersList.innerHTML = '<li class="empty">Belum ada data voter bulan ini</li>';
+            return;
+          }
+
+          topVotersList.innerHTML = processedVoters.map(voter => `
+            <li>
+              <span>${voter.nickname}</span>
+              <span>${voter.votes} vote${voter.votes !== 1 ? 's' : ''}</span>
+            </li>
+          `).join('');
+        }
+      })
+      .catch(error => {
+        clearTimeout(timeoutId);
+        console.error('[Voter Leaderboard] Error:', error);
+        
+        // Fallback data jika API gagal
+        const fallbackData = [
+          { nickname: ".Argas5811", votes: 1 },
+          { nickname: "Player2", votes: 3 },
+          { nickname: "Player3", votes: 2 }
+        ];
+        
+        if (topVotersList) {
+          topVotersList.innerHTML = `
+            ${fallbackData.map(voter => `
+              <li>
+                <span>${voter.nickname}</span>
+                <span>${voter.votes} vote${voter.votes !== 1 ? 's' : ''}</span>
+              </li>
+            `).join('')}
+            <li class="error-note">Data mungkin tidak terupdate</li>
+          `;
+        }
+      });
+  }
+
+  // Panggil pertama kali
+  fetchVoterData();
+
+  // Set interval untuk pembaruan setiap 1 menit (60000 ms)
+  voterInterval = setInterval(fetchVoterData, 60000);
+
+  // Cleanup interval ketika halaman ditutup
+  window.addEventListener('beforeunload', () => {
+    clearInterval(voterInterval);
+  });
+}

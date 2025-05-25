@@ -4,6 +4,7 @@ const express = require('express');
 const mysql = require('mysql2/promise');
 const crypto = require('crypto');
 const fetch = require('node-fetch');
+const axios = require('axios');
 const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -562,6 +563,17 @@ app.get('/api/check-transaction', async (req, res) => {
       success: false,
       message: 'Terjadi kesalahan server saat memproses permintaan'
     });
+  }
+});
+
+//Top Vote
+app.get('/api/top-voters', async (req, res) => {
+  try {
+    const response = await axios.get('https://minecraft-mp.com/api/?object=servers&element=voters&key=2hzP0qTnCRhWcmf531gFdqr9BmM5mSiZz8&month=current&format=json');
+    res.json(response.data);
+  } catch (error) {
+    console.error('Gagal mengambil data voters:', error.message);
+    res.status(500).json({ error: 'Gagal mengambil data voters' });
   }
 });
 

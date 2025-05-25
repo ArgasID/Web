@@ -739,6 +739,26 @@ a:hover {
   background: rgba(205, 127, 50, 0.1);
 }
 
+/* Leaderboard styles */
+.leaderboard-card ol li.loading {
+  color: #aaa;
+  font-style: italic;
+  list-style-type: none;
+}
+
+.leaderboard-card ol li.empty {
+  color: #888;
+  font-style: italic;
+  list-style-type: none;
+}
+
+.leaderboard-card .error-note {
+  color: #ff6b6b;
+  font-size: 0.8em;
+  margin-top: 5px;
+  text-align: center;
+}
+
 .product-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
