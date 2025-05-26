@@ -227,7 +227,7 @@ const tripayConfig = {
   apiKey: 'PCYJ6jKIFZgmMlF26cm5SDLBmbeR678VuBzrZqIF',
   baseUrl: 'https://tripay.co.id/api',
   callbackUrl: 'https://web.glowbit.fun/callback',
-  returnUrl: 'https://web.glowbit.fun/redirect'
+  returnUrl: 'https://web.glowbit.fun/status-payment'
 };
 
 function formatRankName(rank) {

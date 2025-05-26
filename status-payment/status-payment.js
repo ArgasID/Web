@@ -135,7 +135,7 @@ function tampilkanError(pesanError) {
   element.pesan.textContent = pesanError;
   element.tombol.innerHTML = `
     <a href="/" class="tombol tombol-primer">Kembali ke Beranda</a>
-    <a href="/kontak" class="tombol tombol-sekunder">Hubungi Admin</a>
+    <a href="/tentang-kami/#Kontak-Kami" class="tombol tombol-sekunder">Hubungi Admin</a>
   `;
   element.detail.style.display = 'none';
 }
