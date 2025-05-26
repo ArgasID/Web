@@ -759,6 +759,35 @@ a:hover {
   text-align: center;
 }
 
+.voters-list {
+  max-height: auto;
+  overflow-y: hidden;
+  transition: max-height 0.3s ease;
+  padding: 0;
+  list-style: none;
+}
+
+.voters-list.expanded {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.voters-list li {
+  display: flex;
+  justify-content: space-between;
+  background: #1e2a50;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.last-updated-text {
+  font-size: 0.9em;
+  color: #aaa;
+  margin-top: 10px;
+}
+
 .product-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

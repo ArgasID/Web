@@ -89,7 +89,7 @@ function perbaruiTampilan(status, checkoutUrl, transactionId) {
       judul: 'Pembayaran Kadaluarsa',
       pesan: 'Waktu pembayaran Anda telah habis. Silakan lakukan transaksi baru.',
       tombol: `
-        <a href="/beli-rank" class="tombol tombol-primer">Beli Rank Baru</a>
+        <a href="/categoty/ranks" class="tombol tombol-primer">Beli Rank Baru</a>
         <a href="/" class="tombol tombol-sekunder">Kembali ke Beranda</a>
       `
     },

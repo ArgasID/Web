@@ -136,10 +136,11 @@
     </div>
     <div class="leaderboard-card" data-scroll>
       <h3><i class="fas fa-thumbs-up"></i> Top Vote</h3>
-      <ol id="top-voters">
-        <!-- Data akan diisi oleh JavaScript -->
+      <ol id="top-voters" class="voters-list">
         <li class="loading">Memuat data voter...</li>
       </ol>
+      <button id="show-more-btn" style="display:none;" class="btn btn-secondary">Show More</button>
+      <p id="last-updated" class="last-updated-text"></p>
     </div>
   </div>
 </section>
@@ -194,18 +195,54 @@
       const response = await fetch('/api/top-voters');
       const data = await response.json();
       const votersList = document.getElementById("top-voters");
-      votersList.innerHTML = '';
+      const showMoreBtn = document.getElementById("show-more-btn");
+      const lastUpdated = document.getElementById("last-updated");
 
-      if (data.voters && data.voters.length > 0) {
-        // Asumsikan data sudah urut dari API
-        data.voters.forEach((voter, index) => {
-          const li = document.createElement("li");
-          li.innerHTML = `<strong>#${index + 1} ${voter.nickname}</strong>  ${voter.votes} vote${voter.votes > 1 ? 's' : ''}`;
-          votersList.appendChild(li);
-        });
-      } else {
+      votersList.innerHTML = '';
+      let voters = data.voters || [];
+
+      if (voters.length === 0) {
         votersList.innerHTML = '<li>Tidak ada data vote bulan ini.</li>';
+        return;
       }
+
+      // Simpan elemen <li> agar bisa ditampilkan/expand nanti
+      let liElements = voters.slice(0, 10).map((voter, index) => {
+        const li = document.createElement("li");
+        li.innerHTML = `<span><strong>#${index + 1}</strong> ${voter.nickname}</span><span>${voter.votes} vote</span>`;
+        return li;
+      });
+
+      // Tampilkan 5 pertama
+      liElements.slice(0, 5).forEach(li => votersList.appendChild(li));
+
+      // Show More button logika
+      if (liElements.length > 5) {
+        showMoreBtn.style.display = 'block';
+        let expanded = false;
+
+        showMoreBtn.onclick = () => {
+          expanded = !expanded;
+          votersList.classList.toggle('expanded');
+
+          if (expanded) {
+            liElements.slice(5).forEach(li => votersList.appendChild(li));
+            showMoreBtn.innerText = 'Show Less';
+          } else {
+            liElements.slice(5).forEach(li => li.remove());
+            showMoreBtn.innerText = 'Show More';
+          }
+        };
+      }
+
+      // Tambahkan waktu update
+      const now = new Date();
+      const formatted = now.toLocaleString('id-ID', {
+        day: '2-digit', month: 'long', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+      lastUpdated.innerText = `Last updated: ${formatted}`;
+
     } catch (error) {
       console.error('Gagal memuat data voters:', error);
       document.getElementById("top-voters").innerHTML = '<li>Gagal memuat data voters.</li>';
