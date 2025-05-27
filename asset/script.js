@@ -259,7 +259,7 @@ function initNavbarScroll() {
  * Server Status Module - Improved version
  */
 function initServerStatus() {
-  const serverAddress = "node.alfiagashop.biz.id:19132"; // IP testing
+  const serverAddress = "play.glowbit.fun:19132"; // IP testing
   const statusText = document.getElementById("server-status-text");
   const statusBadge = document.getElementById("server-status-badge");
   const playerCount = document.getElementById("player-count-text");
