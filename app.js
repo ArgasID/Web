@@ -40,22 +40,39 @@ app.use((req, res, next) => {
 
 // Database configuration with auto-create tables
 const db = {
-  conn: null,
+  pool: null,
 
-  async connect() {
-    this.conn = await mysql.createConnection(global.dbConfig);
+  async init() {
+    this.pool = mysql.createPool({
+      ...global.dbConfig,
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0
+    });
+
     await this.createTables();
   },
 
   async query(sql, params) {
-    if (!this.conn) await this.connect();
-    const [rows] = await this.conn.execute(sql, params || []);
-    return rows;
+    let connection;
+    try {
+      connection = await this.pool.getConnection();
+      const [rows] = await connection.execute(sql, params || []);
+      return rows;
+    } catch (err) {
+      console.error('Database query error:', err);
+      throw err;
+    } finally {
+      if (connection) connection.release();
+    }
   },
 
   async createTables() {
+    let connection;
     try {
-      await this.conn.execute(`
+      connection = await this.pool.getConnection();
+      
+      await connection.execute(`
         CREATE TABLE IF NOT EXISTS players (
           id INT AUTO_INCREMENT PRIMARY KEY,
           name VARCHAR(50) NOT NULL UNIQUE,
@@ -107,12 +124,14 @@ const db = {
     } catch (err) {
       console.error('Error creating tables:', err);
       throw err;
+    } finally {
+      if (connection) connection.release();
     }
   }
 };
 
 // Initialize database connection
-db.connect().catch(err => {
+db.init().catch(err => {
   console.error('Failed to initialize database:', err);
   process.exit(1);
 });
