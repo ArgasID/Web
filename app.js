@@ -39,6 +39,7 @@ app.use((req, res, next) => {
 });
 
 // Database configuration with auto-create tables
+// Database configuration with auto-create tables
 const db = {
   pool: null,
 
@@ -51,6 +52,8 @@ const db = {
     });
 
     await this.createTables();
+    console.log('Database pool initialized and tables verified');
+    return this.pool;
   },
 
   async query(sql, params) {
@@ -81,7 +84,7 @@ const db = {
         )
       `);
 
-      await this.conn.execute(`
+      await connection.execute(`
         CREATE TABLE IF NOT EXISTS pending_commands (
           id INT AUTO_INCREMENT PRIMARY KEY,
           command TEXT NOT NULL,
@@ -89,27 +92,27 @@ const db = {
         )
       `);
 
-      await this.conn.execute(`
-      CREATE TABLE IF NOT EXISTS transactions (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        transaction_id VARCHAR(50) NOT NULL,
-        merchant_ref VARCHAR(50) NOT NULL,
-        customer_name VARCHAR(100) NOT NULL,
-        email VARCHAR(100) NOT NULL,
-        phone VARCHAR(20) NOT NULL,
-        amount INT NOT NULL,
-        status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
-        payment_method VARCHAR(50) NOT NULL,
-        checkout_url TEXT NOT NULL,
-        username VARCHAR(50) NOT NULL,
-        rank VARCHAR(50) NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE(transaction_id),
-        UNIQUE(merchant_ref)
-      )
-    `);
+      await connection.execute(`
+        CREATE TABLE IF NOT EXISTS transactions (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          transaction_id VARCHAR(50) NOT NULL,
+          merchant_ref VARCHAR(50) NOT NULL,
+          customer_name VARCHAR(100) NOT NULL,
+          email VARCHAR(100) NOT NULL,
+          phone VARCHAR(20) NOT NULL,
+          amount INT NOT NULL,
+          status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+          payment_method VARCHAR(50) NOT NULL,
+          checkout_url TEXT NOT NULL,
+          username VARCHAR(50) NOT NULL,
+          rank VARCHAR(50) NOT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE(transaction_id),
+          UNIQUE(merchant_ref)
+        )
+      `);
 
-      await this.conn.execute(`
+      await connection.execute(`
         CREATE TABLE IF NOT EXISTS transaction_errors (
           id INT AUTO_INCREMENT PRIMARY KEY,
           transaction_id VARCHAR(50),
@@ -130,11 +133,17 @@ const db = {
   }
 };
 
-// Initialize database connection
-db.init().catch(err => {
-  console.error('Failed to initialize database:', err);
-  process.exit(1);
-});
+// Session store untuk production (gunakan database)
+const MySQLStore = require('express-mysql-session')(session);
+const sessionStore = new MySQLStore({}, db.pool);
+
+app.use(session({
+  secret: 'bsfsgrsety',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false },
+  store: sessionStore
+}));
 
 // Username Check
 app.post('/check-username', async (req, res) => {
@@ -607,11 +616,12 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Start Server
-db.connect().then(() => {
+db.init().then(() => {
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
     console.log(`Webstore berjalan di http://localhost:${PORT}`);
   });
 }).catch(err => {
   console.error('Failed to start server:', err);
+  process.exit(1);
 });
