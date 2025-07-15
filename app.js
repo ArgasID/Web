@@ -42,8 +42,10 @@ app.use((req, res, next) => {
 // Database configuration with auto-create tables
 const db = {
   pool: null,
+  isConnected: false,
 
   async init() {
+  try {
     this.pool = mysql.createPool({
       ...global.dbConfig,
       waitForConnections: true,
@@ -52,11 +54,20 @@ const db = {
     });
 
     await this.createTables();
-    console.log('Database pool initialized and tables verified');
-    return this.pool;
-  },
+    this.isConnected = true;
+    console.log('✅ Database berhasil terkoneksi');
+  } catch (err) {
+    this.isConnected = false;
+    console.warn('⚠️ Tidak bisa konek ke database. Lanjutkan tanpa DB.');
+  }
+},
 
   async query(sql, params) {
+    if (!this.isConnected) {
+      console.warn('⚠️ Query dibatalkan: database tidak terkoneksi');
+      throw new Error('Database tidak tersedia');
+    }
+
     let connection;
     try {
       connection = await this.pool.getConnection();
@@ -74,7 +85,7 @@ const db = {
     let connection;
     try {
       connection = await this.pool.getConnection();
-      
+
       await connection.execute(`
         CREATE TABLE IF NOT EXISTS players (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -83,7 +94,6 @@ const db = {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
-
       await connection.execute(`
         CREATE TABLE IF NOT EXISTS pending_commands (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -91,7 +101,6 @@ const db = {
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
-
       await connection.execute(`
         CREATE TABLE IF NOT EXISTS transactions (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -111,7 +120,6 @@ const db = {
           UNIQUE(merchant_ref)
         )
       `);
-
       await connection.execute(`
         CREATE TABLE IF NOT EXISTS transaction_errors (
           id INT AUTO_INCREMENT PRIMARY KEY,
@@ -123,9 +131,9 @@ const db = {
         )
       `);
 
-      console.log('Database tables verified/created');
+      console.log('✅ Tabel database dibuat/terverifikasi');
     } catch (err) {
-      console.error('Error creating tables:', err);
+      console.error('❌ Gagal membuat tabel:', err.message);
       throw err;
     } finally {
       if (connection) connection.release();
@@ -151,6 +159,9 @@ app.post('/check-username', async (req, res) => {
     const { username } = req.body;
     if (!username) return res.status(400).json({ exists: false });
 
+    if (!db.isConnected) {
+     return res.json({ exists: false, message: 'Database tidak tersedia' });
+    }
     const rows = await db.query("SELECT name FROM players WHERE name = ?", [username]);
     res.json({ exists: rows.length > 0 });
   } catch (err) {
@@ -170,7 +181,13 @@ app.post('/login', async (req, res) => {
         message: 'Username kosong.' 
       });
     }
-
+    
+if (!db.isConnected) {
+  return res.status(503).json({
+    success: false,
+    message: 'Fitur login nonaktif karena database tidak tersedia'
+  });
+}
     // Cek username di database
     const rows = await db.query('SELECT * FROM players WHERE name = ?', [username]);
     
@@ -616,12 +633,13 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Start Server
-db.init().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log(`Webstore berjalan di http://localhost:${PORT}`);
-  });
-}).catch(err => {
-  console.error('Failed to start server:', err);
-  process.exit(1);
-});
+(async () => {
+  try {
+    await db.init();
+    console.log('✅ Database berhasil terkoneksi');
+  } catch (err) {
+    console.error('❌ Gagal konek ke database:', err);
+  }
+})();
+
+module.exports = app;
