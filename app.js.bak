@@ -633,15 +633,13 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 // Start Server
-if (require.main === module) {
-  const PORT = process.env.PORT || 3000;
-
-  (async () => {
+(async () => {
+  try {
     await db.init();
-    app.listen(PORT, () => {
-      console.log(`✅ Web jalan di http://localhost:${PORT}`);
-    });
-  })();
-}
+    console.log('✅ Database berhasil terkoneksi');
+  } catch (err) {
+    console.error('❌ Gagal konek ke database:', err);
+  }
+})();
 
 module.exports = app;
