@@ -1,6 +1,6 @@
 // config.js dengan environment variables
 global.dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
+  host: process.env.DB_HOST || '15.235.227.117',
   user: process.env.DB_USER || 'glowbitf_data',
   password: process.env.DB_PASSWORD || 'vJWYH5f2BC5CQP97Tc5e',
   database: process.env.DB_NAME || 'glowbitf_data',
